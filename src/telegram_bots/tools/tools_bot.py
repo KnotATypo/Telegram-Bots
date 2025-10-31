@@ -2,7 +2,6 @@ import json
 import os
 
 import cv2
-import numpy as np
 import requests
 
 from telegram_bots.bot import Bot
@@ -63,47 +62,46 @@ class ToolsBot(Bot):
 def get_power_draw(path):
     vidcap = cv2.VideoCapture(path)
 
-    down_sample = 2
-    fps = vidcap.get(cv2.CAP_PROP_FPS)
-    success, image = vidcap.read()
+    fps = round(vidcap.get(cv2.CAP_PROP_FPS), 1)
     count = 0
-    red_counts = []
+    frames = []
+    success, image = vidcap.read()
     while success:
-        if count % down_sample == 0:
-            vidcap.grab()
-        else:
-            red = image[:, :, 2]
-            scale = 0.05
-            h, w = red.shape[:2]
-            new_w = max(1, int(w * scale))
-            new_h = max(1, int(h * scale))
-            red = cv2.resize(red, (new_w, new_h), interpolation=cv2.INTER_AREA)
-            _, red = cv2.threshold(red, 240, 255, cv2.THRESH_BINARY)
-            reds = int(cv2.countNonZero(red))
-            red_counts.append(reds)
-            success, image = vidcap.read()
+        red_frame = get_red_count(image) > 200  # We consider a blink captured if more than 200 red pixels are detected
+        frames.append((red_frame, round(count / fps, 2)))
+        success, image = vidcap.read()
         count += 1
 
-    while red_counts[0] == 0:
-        red_counts.pop(0)
+    while not frames[0][0]:  # Remove leading non-red frames
+        frames.pop(0)
 
-    start = 0
-    gap = True
-    gap_sizes = []
-    for i, rc in enumerate(red_counts):
-        if rc > 0:
-            if gap:
-                gap_sizes.append(i - start)
-                start = i
-                gap = False
-            continue
-        elif rc == 0:
-            gap = True
-    gap_sizes.pop(0)
+    compressed_frames = [frames[0]]
+    for i, f in enumerate(frames[1:], start=1):  # Compress consecutive identical frames
+        if frames[i - 1][0] != f[0]:
+            compressed_frames.append(f)
 
-    blinks_per_second = 1 / (np.array(gap_sizes) / (fps / down_sample)).mean()
-    watts = blinks_per_second * 3600
-    if watts > 1000:
-        return f"{round(watts / 1000, 2)} kW"
+    if not compressed_frames[-1][0]:  # compressed_frames needs to end with a red frame
+        compressed_frames.pop()
+
+    gap_count = sum([not x[0] for x in compressed_frames])
+    elapsed_seconds = compressed_frames[-1][1] - compressed_frames[0][1]
+
+    wh = (3600 * gap_count) / elapsed_seconds
+    if wh > 1000:
+        return round(wh / 1000, 2), 'kW'
     else:
-        return f"{round(watts)} W"
+        return round(wh), 'W'
+
+
+def get_red_count(image) -> int:
+    red = image[:, :, 2]
+
+    # Scale image to 720x1280 max
+    h, w = red.shape[:2]
+    new_w = max(1, int(w * 1 / (w / 720)))
+    new_h = max(1, int(h * 1 / (h / 1280)))
+    red = cv2.resize(red, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+    _, red = cv2.threshold(red, 240, 255, cv2.THRESH_BINARY)
+    num_pass = int(cv2.countNonZero(red))
+    return num_pass
