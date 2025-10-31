@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import requests
 
-from bot import Bot
+from src.bot import Bot
 
 STATES = ["Power meter"]
 CUSTOM_KEYBOARD = {

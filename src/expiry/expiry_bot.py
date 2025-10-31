@@ -7,7 +7,7 @@ from typing import Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from bot import Bot
+from src.bot import Bot
 
 CUSTOM_KEYBOARD = {
     "keyboard": [[{"text": "Add"}, {"text": "List"}, {"text": "Remove"}]],
@@ -20,13 +20,15 @@ CUSTOM_KEYBOARD = {
 class ExpiryBot(Bot):
     user_state: Dict[str, Dict[str, str]]
     sched: BackgroundScheduler
+    db_path: str
 
     def __init__(self):
         super().__init__(f"bot{os.getenv("EXPIRY_BOT_TOKEN")}", os.getenv("EXPIRY_BOT_SECRET"))
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
+        self.db_path = os.path.join(os.path.dirname(__file__), "data.db")
 
-        connection = sqlite3.connect("data.db")
+        connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
         connection.commit()
@@ -37,7 +39,7 @@ class ExpiryBot(Bot):
         atexit.register(lambda: self.sched.shutdown())
 
     def send_notifications(self):
-        connection = sqlite3.connect("data.db")
+        connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
         cursor.execute("SELECT name, date FROM items")
         rows = cursor.fetchall()
@@ -87,7 +89,7 @@ class ExpiryBot(Bot):
             ):
                 year += 1
             date = f"{year}-{month:02d}-{day:02d}"
-            connection = sqlite3.connect("data.db")
+            connection = sqlite3.connect(self.db_path)
             cursor = connection.cursor()
             cursor.execute("INSERT INTO items (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date))
             connection.commit()
@@ -96,7 +98,7 @@ class ExpiryBot(Bot):
             self.user_state[chat_id]["state"] = "idle"
             self.user_state[chat_id]["item"] = None
         elif text == "List" and state == "idle":
-            connection = sqlite3.connect("data.db")
+            connection = sqlite3.connect(self.db_path)
             cursor = connection.cursor()
             cursor.execute("SELECT name, date FROM items")
             rows = cursor.fetchall()
@@ -111,7 +113,7 @@ class ExpiryBot(Bot):
             connection.close()
         elif text == "Remove" and state == "idle":
             self.user_state[chat_id]["state"] = "removing_item"
-            connection = sqlite3.connect("data.db")
+            connection = sqlite3.connect(self.db_path)
             cursor = connection.cursor()
             cursor.execute("SELECT name FROM items")
             rows = cursor.fetchall()
@@ -128,7 +130,7 @@ class ExpiryBot(Bot):
             connection.close()
         elif state == "removing_item":
             item_to_remove = text
-            connection = sqlite3.connect("data.db")
+            connection = sqlite3.connect(self.db_path)
             cursor = connection.cursor()
             cursor.execute("DELETE FROM items WHERE name = ?", (item_to_remove,))
             connection.commit()

@@ -7,8 +7,8 @@ from waitress import serve
 load_dotenv()
 
 from bot import Bot
-from expiry_bot import ExpiryBot
-from tools_bot import ToolsBot
+from expiry.expiry_bot import ExpiryBot
+from tools.tools_bot import ToolsBot
 
 bots: Dict[str, Bot] = {"expiry": ExpiryBot(),
                         "tools": ToolsBot()}
