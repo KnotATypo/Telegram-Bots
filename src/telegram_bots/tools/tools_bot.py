@@ -56,7 +56,7 @@ class ToolsBot(Bot):
                 self.send_message("That wasn't a video, try again", chat_id)
 
 
-def get_power_draw(path):
+def get_power_draw(path: str) -> str:
     vidcap = cv2.VideoCapture(path)
 
     fps = round(vidcap.get(cv2.CAP_PROP_FPS), 1)
@@ -85,9 +85,9 @@ def get_power_draw(path):
 
     wh = (3600 * gap_count) / elapsed_seconds
     if wh > 1000:
-        return round(wh / 1000, 2), 'kW'
+        return f"{round(wh / 1000, 2)} kW"
     else:
-        return round(wh), 'W'
+        return f"{round(wh)} W"
 
 
 def get_red_count(image) -> int:
