@@ -13,6 +13,7 @@ from telegram_bots.expiry.expiry_bot import ExpiryBot
 from telegram_bots.tools.tools_bot import ToolsBot
 
 app = Flask(__name__)
+# Dict of subdomain to Bot instance
 bots: Dict[str, Bot] = {}
 task_q = queue.Queue()
 
@@ -39,6 +40,7 @@ def webhook():
     if request.headers["X-Telegram-Bot-Api-Secret-Token"] != bot.secret_token:
         return jsonify({"status": "failure"}), 415
 
+    print("Webhook received for:", host)
     task_q.put((bot, request.json))
 
     return jsonify({"status": "success"}), 200
@@ -46,8 +48,8 @@ def webhook():
 
 def start():
     print("Initialising bots...")
-    bots["expiry"] = ExpiryBot()
-    bots["tools"] = ToolsBot()
+    bots["expiry-webhook"] = ExpiryBot()
+    bots["tools-webhook"] = ToolsBot()
     print("Starting webhook server...")
     serve(app, host="0.0.0.0", port=5000)
 
