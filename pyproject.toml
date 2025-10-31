@@ -1,0 +1,16 @@
+[project]
+name = "telegram-bots"
+version = "0.1.0"
+description = "Project for managing Telegram bots."
+requires-python = ">=3.13"
+dependencies = [
+    "apscheduler>=3.11.0",
+    "flask>=3.1.2",
+    "numpy>=2.3.4",
+    "opencv-python>=4.11.0.86",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+    "systemd-python>=235",
+    "tqdm>=4.67.1",
+    "waitress>=3.0.2",
+]
