@@ -1,18 +1,17 @@
-import os
 from typing import Dict
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from waitress import serve
 
+load_dotenv()
+
 from bot import Bot
 from expiry_bot import ExpiryBot
 from tools_bot import ToolsBot
 
-load_dotenv()
-
-bots: Dict[str, Bot] = {"expiry": ExpiryBot(f"bot{os.getenv("EXPIRY_BOT_KEY")}", os.getenv("EXPIRY_BOT_SECRET")),
-                        "tools": ToolsBot(f"bot{os.getenv("TOOLS_BOT_KEY")}", os.getenv("TOOLS_BOT_SECRET"))}
+bots: Dict[str, Bot] = {"expiry": ExpiryBot(),
+                        "tools": ToolsBot()}
 
 app = Flask(__name__)
 

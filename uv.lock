@@ -100,35 +100,6 @@ wheels = [
 ]
 
 [[package]]
-name = "expiry-bot"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "apscheduler" },
-    { name = "flask" },
-    { name = "numpy" },
-    { name = "opencv-python" },
-    { name = "python-dotenv" },
-    { name = "requests" },
-    { name = "systemd-python" },
-    { name = "tqdm" },
-    { name = "waitress" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "apscheduler", specifier = ">=3.11.0" },
-    { name = "flask", specifier = ">=3.1.2" },
-    { name = "numpy", specifier = ">=2.3.4" },
-    { name = "opencv-python", specifier = ">=4.11.0.86" },
-    { name = "python-dotenv", specifier = ">=1.2.1" },
-    { name = "requests", specifier = ">=2.32.5" },
-    { name = "systemd-python", specifier = ">=235" },
-    { name = "tqdm", specifier = ">=4.67.1" },
-    { name = "waitress", specifier = ">=3.0.2" },
-]
-
-[[package]]
 name = "flask"
 version = "3.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -325,6 +296,35 @@ name = "systemd-python"
 version = "235"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/10/9e/ab4458e00367223bda2dd7ccf0849a72235ee3e29b36dce732685d9b7ad9/systemd-python-235.tar.gz", hash = "sha256:4e57f39797fd5d9e2d22b8806a252d7c0106c936039d1e71c8c6b8008e695c0a", size = 61677, upload-time = "2023-02-11T13:42:16.588Z" }
+
+[[package]]
+name = "telegram-bots"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "apscheduler" },
+    { name = "flask" },
+    { name = "numpy" },
+    { name = "opencv-python" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+    { name = "systemd-python" },
+    { name = "tqdm" },
+    { name = "waitress" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "apscheduler", specifier = ">=3.11.0" },
+    { name = "flask", specifier = ">=3.1.2" },
+    { name = "numpy", specifier = ">=2.3.4" },
+    { name = "opencv-python", specifier = ">=4.11.0.86" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
+    { name = "requests", specifier = ">=2.32.5" },
+    { name = "systemd-python", specifier = ">=235" },
+    { name = "tqdm", specifier = ">=4.67.1" },
+    { name = "waitress", specifier = ">=3.0.2" },
+]
 
 [[package]]
 name = "tqdm"

@@ -19,8 +19,8 @@ CUSTOM_KEYBOARD = {
 class ToolsBot(Bot):
     state: str
 
-    def __init__(self, api_key, secret_token):
-        super().__init__(api_key, secret_token)
+    def __init__(self):
+        super().__init__(f"bot{os.getenv("TOOLS_BOT_KEY")}", os.getenv("TOOLS_BOT_SECRET"))
         self.state = "idle"
 
     def handle_message(self, data):
