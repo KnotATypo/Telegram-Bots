@@ -19,8 +19,10 @@ class ToolsBot(Bot):
     state: str
 
     def __init__(self):
+        print("Initialising ToolsBot...")
         super().__init__(f"bot{os.getenv("TOOLS_BOT_TOKEN")}", os.getenv("TOOLS_BOT_SECRET"))
         self.state = "idle"
+        print("ToolsBot initialised")
 
     def handle_message(self, data):
         message = data["message"]

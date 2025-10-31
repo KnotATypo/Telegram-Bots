@@ -10,8 +10,7 @@ from telegram_bots.bot import Bot
 from telegram_bots.expiry.expiry_bot import ExpiryBot
 from telegram_bots.tools.tools_bot import ToolsBot
 
-bots: Dict[str, Bot] = {"expiry": ExpiryBot(),
-                        "tools": ToolsBot()}
+bots: Dict[str, Bot] = {}
 
 app = Flask(__name__)
 
@@ -37,6 +36,10 @@ def webhook():
 
 
 def start():
+    print("Initialising bots...")
+    bots["expiry"] = ExpiryBot()
+    bots["tools"] = ToolsBot()
+    print("Starting webhook server...")
     serve(app, host="0.0.0.0", port=5000)
 
 

@@ -24,6 +24,7 @@ class ExpiryBot(Bot):
     db_path: str
 
     def __init__(self):
+        print("Initialising ExpiryBot...")
         super().__init__(f"bot{os.getenv("EXPIRY_BOT_TOKEN")}", os.getenv("EXPIRY_BOT_SECRET"))
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
@@ -35,6 +36,8 @@ class ExpiryBot(Bot):
         self.sched.add_job(self.send_notifications, "cron", hour=10, minute=0)
         self.sched.start()
         atexit.register(lambda: self.sched.shutdown())
+
+        print("ExpiryBot initialised")
 
     def send_notifications(self):
         with self.db_cursor() as cursor:
