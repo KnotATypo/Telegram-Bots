@@ -2,6 +2,7 @@ import atexit
 import os
 import sqlite3
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime
 from typing import Dict
 
@@ -28,21 +29,17 @@ class ExpiryBot(Bot):
         self.sched = BackgroundScheduler(daemon=True)
         self.db_path = os.path.join(os.path.dirname(__file__), "data.db")
 
-        connection = sqlite3.connect(self.db_path)
-        cursor = connection.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
-        connection.commit()
-        connection.close()
+        with self.db_cursor() as cursor:
+            cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
 
         self.sched.add_job(self.send_notifications, "cron", hour=10, minute=0)
         self.sched.start()
         atexit.register(lambda: self.sched.shutdown())
 
     def send_notifications(self):
-        connection = sqlite3.connect(self.db_path)
-        cursor = connection.cursor()
-        cursor.execute("SELECT name, date FROM items")
-        rows = cursor.fetchall()
+        with self.db_cursor() as cursor:
+            cursor.execute("SELECT name, date FROM items")
+            rows = cursor.fetchall()
         today = datetime.now().date()
         for row in rows:
             item_name = row[0]
@@ -53,7 +50,6 @@ class ExpiryBot(Bot):
             elif expiration_date == today.replace(day=today.day + 1):
                 for chat_id in ["5937133733", "6167840973"]:
                     self.send_message(f"{item_name} will expire tomorrow", chat_id)
-        connection.close()
 
     def handle_message(self, data):
         text = data["message"]["text"]
@@ -83,25 +79,21 @@ class ExpiryBot(Bot):
                 return
             year = datetime.now().year
             if (
-                month < datetime.now().month
-                or (month == datetime.now().month and day < datetime.now().day)
-                or (month == datetime.now().month and day == datetime.now().day)
+                    month < datetime.now().month
+                    or (month == datetime.now().month and day < datetime.now().day)
+                    or (month == datetime.now().month and day == datetime.now().day)
             ):
                 year += 1
             date = f"{year}-{month:02d}-{day:02d}"
-            connection = sqlite3.connect(self.db_path)
-            cursor = connection.cursor()
-            cursor.execute("INSERT INTO items (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date))
-            connection.commit()
-            connection.close()
+            with self.db_cursor() as cursor:
+                cursor.execute("INSERT INTO items (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date))
             self.send_message(f"{self.user_state[chat_id]['item']} will expire on {date}", chat_id, CUSTOM_KEYBOARD)
             self.user_state[chat_id]["state"] = "idle"
             self.user_state[chat_id]["item"] = None
         elif text == "List" and state == "idle":
-            connection = sqlite3.connect(self.db_path)
-            cursor = connection.cursor()
-            cursor.execute("SELECT name, date FROM items")
-            rows = cursor.fetchall()
+            with self.db_cursor() as cursor:
+                cursor.execute("SELECT name, date FROM items")
+                rows = cursor.fetchall()
             if not rows:
                 self.send_message("No items found.", chat_id, CUSTOM_KEYBOARD)
             else:
@@ -110,13 +102,11 @@ class ExpiryBot(Bot):
                 for row in rows:
                     message += f"- {row[0]} (expires on {row[1]})\n"
                 self.send_message(message, chat_id, CUSTOM_KEYBOARD)
-            connection.close()
         elif text == "Remove" and state == "idle":
             self.user_state[chat_id]["state"] = "removing_item"
-            connection = sqlite3.connect(self.db_path)
-            cursor = connection.cursor()
-            cursor.execute("SELECT name FROM items")
-            rows = cursor.fetchall()
+            with self.db_cursor() as cursor:
+                cursor.execute("SELECT name FROM items")
+                rows = cursor.fetchall()
             if not rows:
                 self.send_message("No items to remove.", chat_id, CUSTOM_KEYBOARD)
                 self.user_state[chat_id]["state"] = "idle"
@@ -127,13 +117,17 @@ class ExpiryBot(Bot):
                     chat_id,
                     {"keyboard": [*options], "resize_keyboard": True, "input_field_placeholder": "Choose an option"},
                 )
-            connection.close()
         elif state == "removing_item":
             item_to_remove = text
-            connection = sqlite3.connect(self.db_path)
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM items WHERE name = ?", (item_to_remove,))
-            connection.commit()
-            connection.close()
+            with self.db_cursor() as cursor:
+                cursor.execute("DELETE FROM items WHERE name = ?", (item_to_remove,))
             self.send_message(f"{item_to_remove} has been removed.", chat_id, CUSTOM_KEYBOARD)
             self.user_state[chat_id]["state"] = "idle"
+
+    @contextmanager
+    def db_cursor(self):
+        connection = sqlite3.connect(self.db_path)
+        cursor = connection.cursor()
+        yield cursor
+        connection.commit()
+        connection.close()
