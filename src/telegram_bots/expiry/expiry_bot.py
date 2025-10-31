@@ -8,7 +8,7 @@ from typing import Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from src.bot import Bot
+from telegram_bots.bot import Bot
 
 CUSTOM_KEYBOARD = {
     "keyboard": [[{"text": "Add"}, {"text": "List"}, {"text": "Remove"}]],

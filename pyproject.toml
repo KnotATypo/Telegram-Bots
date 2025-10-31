@@ -12,5 +12,13 @@ dependencies = [
     "requests>=2.32.5",
     "systemd-python>=235",
     "tqdm>=4.67.1",
+    "uv-build>=0.9.6",
     "waitress>=3.0.2",
 ]
+
+[project.scripts]
+start-bots = "telegram_bots.webhook:start"
+
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"

@@ -6,9 +6,9 @@ from waitress import serve
 
 load_dotenv()
 
-from bot import Bot
-from expiry.expiry_bot import ExpiryBot
-from tools.tools_bot import ToolsBot
+from telegram_bots.bot import Bot
+from telegram_bots.expiry.expiry_bot import ExpiryBot
+from telegram_bots.tools.tools_bot import ToolsBot
 
 bots: Dict[str, Bot] = {"expiry": ExpiryBot(),
                         "tools": ToolsBot()}
@@ -36,5 +36,9 @@ def webhook():
     return jsonify({"status": "success"}), 200
 
 
-if __name__ == "__main__":
+def start():
     serve(app, host="0.0.0.0", port=5000)
+
+
+if __name__ == "__main__":
+    start()
