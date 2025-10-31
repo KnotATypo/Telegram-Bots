@@ -31,10 +31,8 @@ class ToolsBot(Bot):
                 self.state = message["text"]
                 if self.state == "Power meter":
                     self.send_message("Please send video", chat_id, replay_markup={"remove_keyboard": True})
-                return
             else:
                 self.send_message("What?", chat_id, replay_markup=CUSTOM_KEYBOARD)
-                return
         elif self.state == "Power meter":
             if "video" in message:
                 response = requests.get(
@@ -56,7 +54,6 @@ class ToolsBot(Bot):
                     self.send_message(f"Error: {e}", chat_id)
             else:
                 self.send_message("That wasn't a video, try again", chat_id)
-                return
 
 
 def get_power_draw(path):
@@ -94,6 +91,13 @@ def get_power_draw(path):
 
 
 def get_red_count(image) -> int:
+    """
+    Returns the number of red pixels in the image after scaling to 720x1280.
+
+    :param image:
+    :return:
+    """
+    # Extract red channel
     red = image[:, :, 2]
 
     # Scale image to 720x1280 max
@@ -102,6 +106,7 @@ def get_red_count(image) -> int:
     new_h = max(1, int(h * 1 / (h / 1280)))
     red = cv2.resize(red, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
+    # Count pixels above 240 threshold
     _, red = cv2.threshold(red, 240, 255, cv2.THRESH_BINARY)
     num_pass = int(cv2.countNonZero(red))
     return num_pass
