@@ -22,7 +22,7 @@ class ExpiryBot(Bot):
     sched: BackgroundScheduler
 
     def __init__(self):
-        super().__init__(f"bot{os.getenv("EXPIRY_BOT_KEY")}", os.getenv("EXPIRY_BOT_SECRET"))
+        super().__init__(f"bot{os.getenv("EXPIRY_BOT_TOKEN")}", os.getenv("EXPIRY_BOT_SECRET"))
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
 

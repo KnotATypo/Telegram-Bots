@@ -1,14 +1,15 @@
 import json
+import os
 
 import requests
 
 
 class Bot:
-    api_key: str
+    api_token: str
     secret_token: str
 
-    def __init__(self, api_key, secret_token):
-        self.api_key = api_key
+    def __init__(self, api_token, secret_token):
+        self.api_token = api_token
         self.secret_token = secret_token
 
     def handle_message(self, message):
@@ -20,7 +21,7 @@ class Bot:
             data["reply_markup"] = replay_markup
         print(f"Sending message to {chat_id}: {text}")
         requests.post(
-            f"http://localhost:8081/{self.api_key}/sendMessage",
+            f"{os.getenv("BOT_API_URL")}/{self.api_token}/sendMessage",
             headers={"Content-Type": "application/json"},
             data=json.dumps(data),
         )

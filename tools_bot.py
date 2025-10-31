@@ -20,7 +20,7 @@ class ToolsBot(Bot):
     state: str
 
     def __init__(self):
-        super().__init__(f"bot{os.getenv("TOOLS_BOT_KEY")}", os.getenv("TOOLS_BOT_SECRET"))
+        super().__init__(f"bot{os.getenv("TOOLS_BOT_TOKEN")}", os.getenv("TOOLS_BOT_SECRET"))
         self.state = "idle"
 
     def handle_message(self, data):
@@ -39,14 +39,14 @@ class ToolsBot(Bot):
         elif self.state == "Power meter":
             if "video" in message:
                 response = requests.get(
-                    f"http://localhost:8081/{self.api_key}/getFile?file_id={message["video"]['file_id']}"
+                    f"{os.getenv("BOT_API_URL")}/{self.api_token}/getFile?file_id={message["video"]['file_id']}"
                 )
                 response = response.json()
                 path = response["result"]["file_path"]
                 try:
                     power_draw = get_power_draw(path)
                     requests.post(
-                        f"http://localhost:8081/{self.api_key}/sendChatAction",
+                        f"{os.getenv("BOT_API_URL")}/{self.api_token}/sendChatAction",
                         headers={"Content-Type": "application/json"},
                         data=json.dumps({"action": "typing", "chat_id": chat_id}),
                     )
