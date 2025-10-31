@@ -1,3 +1,5 @@
+import queue
+import threading
 from typing import Dict
 
 from dotenv import load_dotenv
@@ -10,27 +12,34 @@ from telegram_bots.bot import Bot
 from telegram_bots.expiry.expiry_bot import ExpiryBot
 from telegram_bots.tools.tools_bot import ToolsBot
 
-bots: Dict[str, Bot] = {}
-
 app = Flask(__name__)
+bots: Dict[str, Bot] = {}
+task_q = queue.Queue()
 
 
-# piKPsA0BN5Ji
+def worker():
+    while True:
+        bot, data = task_q.get()
+        try:
+            bot.handle_message(data)
+        except Exception as e:
+            print(f"{type(e)}: {e}")
+        finally:
+            task_q.task_done()
+
+
+threading.Thread(target=worker, daemon=True).start()
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     host = request.headers["host"].split(".")[0]
     bot = bots[host]
 
-    print(request.json)
-
     if request.headers["X-Telegram-Bot-Api-Secret-Token"] != bot.secret_token:
         return jsonify({"status": "failure"}), 415
 
-    data = request.json
-    try:
-        bot.handle_message(data)
-    except Exception as e:
-        print(f"{type(e)}: {e}")
+    task_q.put((bot, request.json))
 
     return jsonify({"status": "success"}), 200
 
