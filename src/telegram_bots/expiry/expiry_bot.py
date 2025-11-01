@@ -45,7 +45,7 @@ class ExpiryBot(Bot):
             cursor.execute("SELECT name, date FROM items")
             rows = cursor.fetchall()
             cursor.execute("SELECT chat_id FROM users")
-            users = cursor.fetchall()
+            users = [x[0] for x in cursor.fetchall()]
         today = datetime.now().date()
         for row in rows:
             item_name = row[0]
@@ -58,9 +58,18 @@ class ExpiryBot(Bot):
 
     def handle_message(self, data):
         text = data["message"]["text"]
-        chat_id = data["message"]["chat"]["id"]
+        chat_id = str(data["message"]["chat"]["id"])
+
         with self.db_cursor() as cursor:
-            cursor.execute("INSERT OR IGNORE INTO users (chat_id) VALUES (?)", (chat_id,))
+            cursor.execute("SELECT chat_id FROM users")
+            users = cursor.fetchall()
+            if (chat_id,) not in users:
+                cursor.execute("INSERT INTO users (chat_id) VALUES (?)", (chat_id,))
+                self.send_message(
+                    "Welcome to ExpiryBot! Use the keyboard below to manage your items.\n\n"
+                    "You will now receive notifications when items are about to expire. If this is a mistake, please contact the bot admin.",
+                    chat_id, CUSTOM_KEYBOARD)
+                return
         state = self.user_state[chat_id]["state"]
 
         if text == "stop":  # Catch-all to reset state
