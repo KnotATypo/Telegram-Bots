@@ -55,6 +55,8 @@ class ExpiryBot(Bot):
                     self.send_message(f"{item_name} will expire today", chat_id)
                 elif expiration_date == today.replace(day=today.day + 1):
                     self.send_message(f"{item_name} will expire tomorrow", chat_id)
+                elif expiration_date < today:
+                    self.send_message(f"{item_name} has expired!", chat_id)
 
     def handle_message(self, data):
         text = data["message"]["text"]

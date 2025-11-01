@@ -27,5 +27,5 @@ The primary commands for interacting with the bot are implemented through the cu
 
 ## Notifications
 
-The bot will send a notification to all users on both the day before and the day of an item's expiry date at 10am. This
-is currently not configurable.
+The bot will send a notification to all users on both the day before and the day of an item's expiry date at 10am, as
+well as every day after the item as expired. This is currently not configurable.
