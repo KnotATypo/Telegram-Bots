@@ -74,7 +74,7 @@ class ExpiryBot(Bot):
                 return
         state = self.user_state[chat_id]["state"]
 
-        if text == "stop":  # Catch-all to reset state
+        if text.lower() == "stop":  # Catch-all to reset state
             self.user_state[chat_id]["state"] = "idle"
             self.user_state[chat_id]["item"] = None
             self.send_message("Operation cancelled.", chat_id, CUSTOM_KEYBOARD)
