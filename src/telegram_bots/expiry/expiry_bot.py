@@ -33,13 +33,13 @@ class ExpiryBot(Bot):
         with self.db_cursor() as cursor:
             cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
 
-        self.sched.add_job(self.send_notifications, "cron", hour=10, minute=0)
+        self.sched.add_job(self._send_notifications, "cron", hour=10, minute=0)
         self.sched.start()
         atexit.register(lambda: self.sched.shutdown())
 
         print("ExpiryBot initialised")
 
-    def send_notifications(self):
+    def _send_notifications(self):
         with self.db_cursor() as cursor:
             cursor.execute("SELECT name, date FROM items")
             rows = cursor.fetchall()
@@ -48,7 +48,7 @@ class ExpiryBot(Bot):
             item_name = row[0]
             expiration_date = datetime.strptime(row[1], "%Y-%m-%d").date()
             if expiration_date == today:
-                for chat_id in ["5937133733", "6167840973"]:
+                for chat_id in ["5937133733", "6167840973"]: # TODO: Replace with dynamic chat IDs
                     self.send_message(f"{item_name} will expire today", chat_id)
             elif expiration_date == today.replace(day=today.day + 1):
                 for chat_id in ["5937133733", "6167840973"]:
@@ -59,73 +59,86 @@ class ExpiryBot(Bot):
         chat_id = data["message"]["chat"]["id"]
         state = self.user_state[chat_id]["state"]
 
-        if text == "Add" and state == "idle":
+        if text == "stop":  # Catch-all to reset state
+            self.user_state[chat_id]["state"] = "idle"
+            self.user_state[chat_id]["item"] = None
+            self.send_message("Operation cancelled.", chat_id, CUSTOM_KEYBOARD)
+        elif text == "Add" and state == "idle":  # Start adding an item
             self.user_state[chat_id]["state"] = "adding_item"
             self.send_message("Please provide the item to add:", chat_id, {"remove_keyboard": True})
-        elif state == "adding_item":
+        elif state == "adding_item":  # Got item name, now ask for date
             self.user_state[chat_id]["state"] = "adding_date"
             self.user_state[chat_id]["item"] = text
             self.send_message("Please provide the expiration date (DD/MM):", chat_id)
-        elif state == "adding_date":
-            if "/" not in text:
-                self.send_message("Invalid date format. Please provide the expiration date in DD/MM format:", chat_id)
-                return
-            day = text.split("/")[0]
-            month = text.split("/")[1]
-            try:
-                day = int(day)
-                month = int(month)
-                assert 1 <= day <= 31
-                assert 1 <= month <= 12
-            except:
-                self.send_message("Invalid date format. Please provide the expiration date in DD/MM format:", chat_id)
-                return
-            year = datetime.now().year
-            if (
-                    month < datetime.now().month
-                    or (month == datetime.now().month and day < datetime.now().day)
-                    or (month == datetime.now().month and day == datetime.now().day)
-            ):
-                year += 1
-            date = f"{year}-{month:02d}-{day:02d}"
-            with self.db_cursor() as cursor:
-                cursor.execute("INSERT INTO items (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date))
-            self.send_message(f"{self.user_state[chat_id]['item']} will expire on {date}", chat_id, CUSTOM_KEYBOARD)
-            self.user_state[chat_id]["state"] = "idle"
-            self.user_state[chat_id]["item"] = None
-        elif text == "List" and state == "idle":
-            with self.db_cursor() as cursor:
-                cursor.execute("SELECT name, date FROM items")
-                rows = cursor.fetchall()
-            if not rows:
-                self.send_message("No items found.", chat_id, CUSTOM_KEYBOARD)
-            else:
-                rows.sort(key=lambda x: datetime.strptime(x[1], "%Y-%m-%d"))
-                message = "Items:\n"
-                for row in rows:
-                    message += f"- {row[0]} (expires on {row[1]})\n"
-                self.send_message(message, chat_id, CUSTOM_KEYBOARD)
-        elif text == "Remove" and state == "idle":
-            self.user_state[chat_id]["state"] = "removing_item"
-            with self.db_cursor() as cursor:
-                cursor.execute("SELECT name FROM items")
-                rows = cursor.fetchall()
-            if not rows:
-                self.send_message("No items to remove.", chat_id, CUSTOM_KEYBOARD)
-                self.user_state[chat_id]["state"] = "idle"
-            else:
-                options = [[{"text": row[0]}] for row in rows]
-                self.send_message(
-                    "Please choose an item to remove:",
-                    chat_id,
-                    {"keyboard": [*options], "resize_keyboard": True, "input_field_placeholder": "Choose an option"},
-                )
-        elif state == "removing_item":
+        elif state == "adding_date":  # Got date, validate and store
+            self._save_item(text, chat_id)
+        elif text == "List" and state == "idle":  # List items
+            self._send_list(chat_id)
+        elif text == "Remove" and state == "idle":  # Start removing an item by showing options
+            self._send_remove_options(chat_id)
+        elif state == "removing_item":  # Remove selected item
             item_to_remove = text
             with self.db_cursor() as cursor:
                 cursor.execute("DELETE FROM items WHERE name = ?", (item_to_remove,))
             self.send_message(f"{item_to_remove} has been removed.", chat_id, CUSTOM_KEYBOARD)
             self.user_state[chat_id]["state"] = "idle"
+
+    def _send_list(self, chat_id):
+        with self.db_cursor() as cursor:
+            cursor.execute("SELECT name, date FROM items")
+            rows = cursor.fetchall()
+        if not rows:
+            self.send_message("No items found.", chat_id, CUSTOM_KEYBOARD)
+        else:
+            rows.sort(key=lambda x: datetime.strptime(x[1], "%Y-%m-%d"))
+            message = "Items:\n"
+            for row in rows:
+                message += f"- {row[0]} (expires on {row[1]})\n"
+            self.send_message(message, chat_id, CUSTOM_KEYBOARD)
+
+    def _send_remove_options(self, chat_id):
+        self.user_state[chat_id]["state"] = "removing_item"
+        with self.db_cursor() as cursor:
+            cursor.execute("SELECT name FROM items")
+            rows = cursor.fetchall()
+        if not rows:
+            self.send_message("No items to remove.", chat_id, CUSTOM_KEYBOARD)
+            self.user_state[chat_id]["state"] = "idle"
+        else:
+            options = [[{"text": row[0]}] for row in rows]
+            self.send_message(
+                "Please choose an item to remove:",
+                chat_id,
+                {"keyboard": [*options], "resize_keyboard": True, "input_field_placeholder": "Choose an option"},
+            )
+
+    def _save_item(self, date, chat_id):
+        if "/" not in date:
+            self.send_message("Invalid date format. Please provide the expiration date in DD/MM format:", chat_id)
+            return
+        day = date.split("/")[0]
+        month = date.split("/")[1]
+        try:
+            day = int(day)
+            month = int(month)
+            assert 1 <= day <= 31
+            assert 1 <= month <= 12
+        except:
+            self.send_message("Invalid date format. Please provide the expiration date in DD/MM format:", chat_id)
+            return
+        year = datetime.now().year
+        if (
+            month < datetime.now().month
+            or (month == datetime.now().month and day < datetime.now().day)
+            or (month == datetime.now().month and day == datetime.now().day)
+        ):
+            year += 1
+        date = f"{year}-{month:02d}-{day:02d}"
+        with self.db_cursor() as cursor:
+            cursor.execute("INSERT INTO items (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date))
+        self.send_message(f"{self.user_state[chat_id]['item']} will expire on {date}", chat_id, CUSTOM_KEYBOARD)
+        self.user_state[chat_id]["state"] = "idle"
+        self.user_state[chat_id]["item"] = None
 
     @contextmanager
     def db_cursor(self):
