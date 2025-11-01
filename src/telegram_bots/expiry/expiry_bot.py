@@ -32,6 +32,7 @@ class ExpiryBot(Bot):
 
         with self.db_cursor() as cursor:
             cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS users (chat_id TEXT UNIQUE)")
 
         self.sched.add_job(self._send_notifications, "cron", hour=10, minute=0)
         self.sched.start()
@@ -43,20 +44,23 @@ class ExpiryBot(Bot):
         with self.db_cursor() as cursor:
             cursor.execute("SELECT name, date FROM items")
             rows = cursor.fetchall()
+            cursor.execute("SELECT chat_id FROM users")
+            users = cursor.fetchall()
         today = datetime.now().date()
         for row in rows:
             item_name = row[0]
             expiration_date = datetime.strptime(row[1], "%Y-%m-%d").date()
-            if expiration_date == today:
-                for chat_id in ["5937133733", "6167840973"]: # TODO: Replace with dynamic chat IDs
+            for chat_id in users:
+                if expiration_date == today:
                     self.send_message(f"{item_name} will expire today", chat_id)
-            elif expiration_date == today.replace(day=today.day + 1):
-                for chat_id in ["5937133733", "6167840973"]:
+                elif expiration_date == today.replace(day=today.day + 1):
                     self.send_message(f"{item_name} will expire tomorrow", chat_id)
 
     def handle_message(self, data):
         text = data["message"]["text"]
         chat_id = data["message"]["chat"]["id"]
+        with self.db_cursor() as cursor:
+            cursor.execute("INSERT OR IGNORE INTO users (chat_id) VALUES (?)", (chat_id,))
         state = self.user_state[chat_id]["state"]
 
         if text == "stop":  # Catch-all to reset state
@@ -128,9 +132,9 @@ class ExpiryBot(Bot):
             return
         year = datetime.now().year
         if (
-            month < datetime.now().month
-            or (month == datetime.now().month and day < datetime.now().day)
-            or (month == datetime.now().month and day == datetime.now().day)
+                month < datetime.now().month
+                or (month == datetime.now().month and day < datetime.now().day)
+                or (month == datetime.now().month and day == datetime.now().day)
         ):
             year += 1
         date = f"{year}-{month:02d}-{day:02d}"
