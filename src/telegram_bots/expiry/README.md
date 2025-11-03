@@ -16,11 +16,11 @@ also be used for other items with expiry dates such as medications or documents.
 
 The primary commands for interacting with the bot are implemented through the custom keyboard buttons:
 
-- Add: Start the process of adding a new item with its expiry date.
+- **Add**: Start the process of adding a new item with its expiry date.
     - The bot will prompt for the item name and then the expiry date.
-- List: View all items along with their expiry dates.
+- **List**: View all items along with their expiry dates.
     - The bot will display a list of items sorted by their expiry dates.
-- Remove: Remove an item from the list.
+- **Remove**: Remove an item from the list.
     - The bot will provide a list of items through the custom keyboard for deletion.
 
 "stop" is also supported by the bot in all states in order to abort the current operation and reset to an idle state.
