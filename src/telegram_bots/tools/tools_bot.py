@@ -10,7 +10,7 @@ from telegram_bots.tools.util import get_power_draw
 
 STATES = ["Power meter", "Check estimate"]
 CUSTOM_KEYBOARD = {
-    "keyboard": [[{"text": "Power meter"}]],
+    "keyboard": [[{"text": "Power meter"}, {"text": "Check estimate"}]],
     "resize_keyboard": True,
     "input_field_placeholder": "Choose an option",
     "is_persistent": True,
