@@ -35,7 +35,7 @@ class ToolsBot(Bot):
             start_time, estimate = self.time_estimate[chat_id]
             actual = (datetime.now() - start_time).seconds / 60
             self.send_message(
-                f"Estimate: {estimate}\nActual: {actual}\nDifference: {100 / estimate * actual}%",
+                f"Estimate: {estimate}\nActual: {actual}\nDifference: {100 / estimate * (estimate - actual)}%",
                 chat_id,
                 replay_markup=CUSTOM_KEYBOARD,
             )
@@ -45,7 +45,7 @@ class ToolsBot(Bot):
                 if self.state == "Power meter":
                     self.send_message("Please send video", chat_id, replay_markup={"remove_keyboard": True})
                 elif self.state == "Check estimate":
-                    self.send_message("Provide estimate in minutes", chat_id)
+                    self.send_message("Provide estimate in minutes", chat_id, replay_markup={"remove_keyboard": True})
             else:
                 self.send_message("Please selection from options", chat_id, replay_markup=CUSTOM_KEYBOARD)
         elif self.state == "Power meter":
