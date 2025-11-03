@@ -33,9 +33,10 @@ class ToolsBot(Bot):
 
         if "text" in message and message["text"].lower() == "done":
             start_time, estimate = self.time_estimate[chat_id]
-            actual = (datetime.now() - start_time).seconds / 60
+            actual = round((datetime.now() - start_time).seconds / 60, 2)
+            percent = round(100 / estimate * ((estimate - actual) if actual < estimate else (actual - estimate)), 1)
             self.send_message(
-                f"Estimate: {estimate}\nActual: {actual}\nDifference: {round(100 / estimate * (estimate - actual))}%",
+                f"Estimate: {estimate}\nActual: {actual}\nDifference: {percent}%",
                 chat_id,
                 replay_markup=CUSTOM_KEYBOARD,
             )
