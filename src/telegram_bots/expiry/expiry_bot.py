@@ -70,7 +70,9 @@ class ExpiryBot(Bot):
                 self.send_message(
                     "Welcome to ExpiryBot! Use the keyboard below to manage your items.\n\n"
                     "You will now receive notifications when items are about to expire. If this is a mistake, please contact the bot admin.",
-                    chat_id, CUSTOM_KEYBOARD)
+                    chat_id,
+                    CUSTOM_KEYBOARD,
+                )
                 return
         state = self.user_state[chat_id]["state"]
 
@@ -143,9 +145,9 @@ class ExpiryBot(Bot):
             return
         year = datetime.now().year
         if (
-                month < datetime.now().month
-                or (month == datetime.now().month and day < datetime.now().day)
-                or (month == datetime.now().month and day == datetime.now().day)
+            month < datetime.now().month
+            or (month == datetime.now().month and day < datetime.now().day)
+            or (month == datetime.now().month and day == datetime.now().day)
         ):
             year += 1
         date = f"{year}-{month:02d}-{day:02d}"
