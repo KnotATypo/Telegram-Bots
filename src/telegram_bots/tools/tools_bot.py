@@ -57,8 +57,34 @@ class ToolsBot(Bot):
     def handle_text(self, chat_id, message, state: enum.Enum | None):
         text: str = message["text"]
 
-        # Check "done" first - this can be done from any state
-        if chat_id in self.time_estimate and text.lower() == "done":
+        self.global_commands(chat_id, text)
+
+        if state is None:
+            try:
+                new_state = States[text.upper().replace(" ", "_")]
+                self.state_manager.set_state(chat_id, new_state)
+                if new_state == States.POWER_METER:
+                    self.send_message("Please send video", chat_id, replay_markup={"remove_keyboard": True})
+                elif new_state == States.CHECK_ESTIMATE:
+                    self.send_message("Provide estimate in minutes", chat_id, replay_markup={"remove_keyboard": True})
+            except KeyError:
+                self.send_message("Please selection from keyboard options", chat_id, replay_markup=CUSTOM_KEYBOARD)
+
+        elif state == States.CHECK_ESTIMATE:
+            self.store_estimate(chat_id, message["text"])
+
+    def global_commands(self, chat_id, text: str):
+        text = text.lower()
+
+        if text == "/start":
+            self.send_message(
+                "Welcome to ToolsBot! Please select an option from the keyboard below.",
+                chat_id,
+                replay_markup=CUSTOM_KEYBOARD,
+            )
+            self.state_manager.clear_state(chat_id)
+
+        elif chat_id in self.time_estimate and text == "done":
             start_time, estimate = self.time_estimate[chat_id]
             actual = round((datetime.now() - start_time).seconds / 60, 2)
             percent = round(100 / estimate * ((estimate - actual) if actual < estimate else (actual - estimate)), 1)
@@ -69,22 +95,15 @@ class ToolsBot(Bot):
             )
             del self.time_estimate[chat_id]
 
-        elif state is None:
-            try:
-                print(text.upper().replace(" ", "_"))
-                new_state = States[text.upper().replace(" ", "_")]
-                self.state_manager.set_state(chat_id, new_state)
-                if new_state == States.POWER_METER:
-                    self.send_message("Please send video", chat_id, replay_markup={"remove_keyboard": True})
-                elif new_state == States.CHECK_ESTIMATE:
-                    self.send_message("Provide estimate in minutes", chat_id, replay_markup={"remove_keyboard": True})
-            except KeyError:
-                self.send_message(
-                    "Please selection from keyboard options", chat_id, replay_markup=CUSTOM_KEYBOARD
-                )
+        elif text in ["stop", "cancel", "clear"]:
+            self.state_manager.clear_state(chat_id)
+            self.send_message(
+                "State cleared. Please select an option from the keyboard.", chat_id, replay_markup=CUSTOM_KEYBOARD
+            )
 
-        elif state == States.CHECK_ESTIMATE:
-            self.store_estimate(chat_id, message["text"])
+        elif text == "debug":
+            self.send_message(f"Current state: {self.state_manager.get_state(chat_id)}", chat_id)
+            self.send_message(f"Stored estimate: {self.time_estimate[chat_id]}", chat_id)
 
     def read_power_meter(self, chat_id, message):
         response = requests.get(
