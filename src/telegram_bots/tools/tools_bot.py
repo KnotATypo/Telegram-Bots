@@ -57,7 +57,8 @@ class ToolsBot(Bot):
     def handle_text(self, chat_id, message, state: enum.Enum | None):
         text: str = message["text"]
 
-        self.global_commands(chat_id, text)
+        if self.handle_global_commands(chat_id, text):
+            return
 
         if state is None:
             try:
@@ -73,7 +74,7 @@ class ToolsBot(Bot):
         elif state == States.CHECK_ESTIMATE:
             self.store_estimate(chat_id, message["text"])
 
-    def global_commands(self, chat_id, text: str):
+    def handle_global_commands(self, chat_id, text: str):
         text = text.lower()
 
         if text == "/start":
@@ -104,6 +105,11 @@ class ToolsBot(Bot):
         elif text == "debug":
             self.send_message(f"Current state: {self.state_manager.get_state(chat_id)}", chat_id)
             self.send_message(f"Stored estimate: {self.time_estimate.get(chat_id, None)}", chat_id)
+
+        else:
+            return False
+
+        return True
 
     def read_power_meter(self, chat_id, message):
         response = requests.get(
