@@ -37,6 +37,12 @@ class ToolsBot(Bot):
         print("ToolsBot initialised")
 
     def handle_message(self, data):
+        """
+        Handle incoming message
+
+        :param data: Incoming message data
+        :return: None
+        """
         message = data["message"]
         chat_id = message["chat"]["id"]
         state = self.state_manager.get_state(chat_id)
@@ -55,6 +61,14 @@ class ToolsBot(Bot):
                 )
 
     def handle_text(self, chat_id, message, state: enum.Enum | None):
+        """
+        Handle incoming message with text content
+
+        :param chat_id: ID of the chat the message is from
+        :param message: Message data
+        :param state: State of the chat
+        :return: None
+        """
         text: str = message["text"]
 
         if self.handle_global_commands(chat_id, text):
@@ -74,7 +88,14 @@ class ToolsBot(Bot):
         elif state == States.CHECK_ESTIMATE:
             self.store_estimate(chat_id, message["text"])
 
-    def handle_global_commands(self, chat_id, text: str):
+    def handle_global_commands(self, chat_id, text: str) -> bool:
+        """
+        Handle global commands that can be called from any state
+
+        :param chat_id: ID of the chat the message is from
+        :param text: Text content of the message
+        :return: Boolean indicating if a global command was handled
+        """
         text = text.lower()
 
         if text == "/start":
@@ -106,7 +127,9 @@ class ToolsBot(Bot):
             self.send_message(f"Current state: {self.state_manager.get_state(chat_id)}", chat_id)
             time_estimate = self.time_estimate.get(chat_id, None)
             if time_estimate is not None:
-                time_estimate = f"Start - {time_estimate[0].strftime("%Y-%m-%d %H:%M:%S")}, Estimate - {time_estimate[1]}"
+                time_estimate = (
+                    f"Start - {time_estimate[0].strftime("%Y-%m-%d %H:%M:%S")}, Estimate - {time_estimate[1]}"
+                )
             self.send_message(f"Stored estimate: {time_estimate}", chat_id)
 
         else:
@@ -115,6 +138,13 @@ class ToolsBot(Bot):
         return True
 
     def read_power_meter(self, chat_id, message):
+        """
+        Read power meter from video message and send result back to user
+
+        :param chat_id: ID of the chat the message is from
+        :param message: Message data
+        :return:
+        """
         response = requests.get(
             f"{os.getenv("BOT_API_URL")}/{self.api_token}/getFile?file_id={message["video"]['file_id']}"
         )
@@ -132,9 +162,16 @@ class ToolsBot(Bot):
         except Exception as e:
             self.send_message(f"Error: {e}", chat_id)
 
-    def store_estimate(self, chat_id: str, message: str):
+    def store_estimate(self, chat_id: str, text: str):
+        """
+        Store time estimate in minutes provided by user
+
+        :param chat_id: ID of the chat the message is from
+        :param text: Text content of the message
+        :return:
+        """
         try:
-            estimate_minutes = int(message)
+            estimate_minutes = int(text)
             self.time_estimate[chat_id] = (datetime.now(), estimate_minutes)
             self.send_message(
                 'Estimate stored. Send "done" to complete estimate', chat_id, replay_markup=CUSTOM_KEYBOARD
