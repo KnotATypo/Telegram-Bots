@@ -104,7 +104,10 @@ class ToolsBot(Bot):
 
         elif text == "debug":
             self.send_message(f"Current state: {self.state_manager.get_state(chat_id)}", chat_id)
-            self.send_message(f"Stored estimate: {self.time_estimate.get(chat_id, None)}", chat_id)
+            time_estimate = self.time_estimate.get(chat_id, None)
+            if time_estimate is not None:
+                time_estimate = f"Start - {time_estimate[0].strftime("%Y-%m-%d %H:%M:%S")}, Estimate - {time_estimate[1]}"
+            self.send_message(f"Stored estimate: {time_estimate}", chat_id)
 
         else:
             return False
