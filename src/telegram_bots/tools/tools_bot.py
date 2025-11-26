@@ -55,10 +55,10 @@ class ToolsBot(Bot):
                 )
 
     def handle_text(self, chat_id, message, state: enum.Enum | None):
-        text = message["text"].lower()
+        text: str = message["text"]
 
         # Check "done" first - this can be done from any state
-        if chat_id in self.time_estimate and text == "done":
+        if chat_id in self.time_estimate and text.lower() == "done":
             start_time, estimate = self.time_estimate[chat_id]
             actual = round((datetime.now() - start_time).seconds / 60, 2)
             percent = round(100 / estimate * ((estimate - actual) if actual < estimate else (actual - estimate)), 1)
@@ -71,7 +71,8 @@ class ToolsBot(Bot):
 
         elif state is None:
             try:
-                new_state = States[text]
+                print(text.upper().replace(" ", "_"))
+                new_state = States[text.upper().replace(" ", "_")]
                 self.state_manager.set_state(chat_id, new_state)
                 if new_state == States.POWER_METER:
                     self.send_message("Please send video", chat_id, replay_markup={"remove_keyboard": True})
@@ -79,7 +80,7 @@ class ToolsBot(Bot):
                     self.send_message("Provide estimate in minutes", chat_id, replay_markup={"remove_keyboard": True})
             except KeyError:
                 self.send_message(
-                    f"Please selection from options: {list(States)}", chat_id, replay_markup=CUSTOM_KEYBOARD
+                    "Please selection from keyboard options", chat_id, replay_markup=CUSTOM_KEYBOARD
                 )
 
         elif state == States.CHECK_ESTIMATE:
