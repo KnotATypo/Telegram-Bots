@@ -15,6 +15,9 @@ class States(enum.Enum):
     POWER_METER = "power meter"
     CHECK_ESTIMATE = "check estimate"
 
+    def __str__(self):
+        return self.value
+
 
 CUSTOM_KEYBOARD = {
     "keyboard": [[{"text": "Power meter"}, {"text": "Check estimate"}]],
@@ -75,7 +78,9 @@ class ToolsBot(Bot):
                 elif new_state == States.CHECK_ESTIMATE:
                     self.send_message("Provide estimate in minutes", chat_id, replay_markup={"remove_keyboard": True})
             except KeyError:
-                self.send_message(f"Please selection from options: {States}", chat_id, replay_markup=CUSTOM_KEYBOARD)
+                self.send_message(
+                    f"Please selection from options: {list(States)}", chat_id, replay_markup=CUSTOM_KEYBOARD
+                )
 
         elif state == States.CHECK_ESTIMATE:
             self.store_estimate(chat_id, message["text"])
