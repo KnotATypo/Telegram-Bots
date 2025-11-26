@@ -103,7 +103,7 @@ class ToolsBot(Bot):
 
         elif text == "debug":
             self.send_message(f"Current state: {self.state_manager.get_state(chat_id)}", chat_id)
-            self.send_message(f"Stored estimate: {self.time_estimate[chat_id]}", chat_id)
+            self.send_message(f"Stored estimate: {self.time_estimate.get(chat_id, None)}", chat_id)
 
     def read_power_meter(self, chat_id, message):
         response = requests.get(
