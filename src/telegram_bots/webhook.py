@@ -39,8 +39,11 @@ def webhook():
     host = request.headers["host"].split(".")[0]
     bot = bots[host]
 
-    if request.headers["X-Telegram-Bot-Api-Secret-Token"] != bot.secret_token:
-        return jsonify({"status": "failure"}), 415
+    if (
+        "X-Telegram-Bot-Api-Secret-Token" not in request.headers
+        or request.headers["X-Telegram-Bot-Api-Secret-Token"] != bot.secret_token
+    ):
+        return jsonify({"status": "unauthorized"}), 401
 
     print("Webhook received for:", host)
     task_q.put((bot, request.json))
