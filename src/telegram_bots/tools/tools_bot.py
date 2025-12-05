@@ -197,6 +197,14 @@ class ToolsBot(DatabaseBot):
             self.send_message("Please provide an estimate in minutes", chat_id)
 
     def store_or_retrieve_occupancy(self, chat_id: str, text: str):
+        """
+        Store occupancy provided by user if given text is a number, or retrieve occupancy otherwise
+
+        :param chat_id: ID of the chat the message is from
+        :param text: Text content of the message
+        :return:
+        """
+
         def sort_time(entry):
             day_multi = {
                 "Monday": 0,
@@ -225,7 +233,7 @@ class ToolsBot(DatabaseBot):
                     "SELECT * FROM occupancy WHERE time LIKE ?", (f"%{text}%",)
                 )  # Using fuzzy matching to allow for short names to be passed
                 counts = cursor.fetchall()
-            counts = sorted(counts, key=sort_time, reverse=True)
+            counts = sorted(counts, key=sort_time)
             count_string = ""
             for count in counts:
                 hour = int(count[0].split(":")[0].split(" ")[1])
@@ -236,6 +244,9 @@ class ToolsBot(DatabaseBot):
                     period = "am"
                 time = f"{count[0].split(" ")[0]} {hour}:{count[0].split(":")[1]}{period}"
                 count_string += f"{time:18} {count[1]}\n"
-            self.send_message(count_string, chat_id, replay_markup=CUSTOM_KEYBOARD)
+            if count_string == "":
+                self.send_message("No occupancy was found", chat_id)
+            else:
+                self.send_message(count_string, chat_id, replay_markup=CUSTOM_KEYBOARD)
 
         self.state_manager.clear_state(chat_id)
