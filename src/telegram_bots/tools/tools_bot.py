@@ -211,7 +211,7 @@ class ToolsBot(DatabaseBot):
             day = time.split(" ")[0]
             hour = time.split(" ")[1].split(":")[0]
             minute = time.split(" ")[1].split(":")[1]
-            return day_multi[day] * 24 + hour + float(f"0.{minute}")
+            return day_multi[day] * 24 + int(hour) + float(f"0.{minute}")
 
         try:
             number = int(text)
