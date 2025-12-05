@@ -87,6 +87,12 @@ class ToolsBot(DatabaseBot):
                     self.send_message("Please send video", chat_id, replay_markup={"remove_keyboard": True})
                 elif new_state == States.CHECK_ESTIMATE:
                     self.send_message("Provide estimate in minutes", chat_id, replay_markup={"remove_keyboard": True})
+                elif new_state == States.OCCUPANCY:
+                    self.send_message(
+                        "Provide a count or name of a day to retrieve data for",
+                        chat_id,
+                        replay_markup={"remove_keyboard": True},
+                    )
             except KeyError:
                 self.send_message("Please selection from keyboard options", chat_id, replay_markup=CUSTOM_KEYBOARD)
 
@@ -131,13 +137,16 @@ class ToolsBot(DatabaseBot):
             )
 
         elif text == "debug":
-            self.send_message(f"Current state: {self.state_manager.get_state(chat_id)}", chat_id)
+            debug_string = f"Current state: {self.state_manager.get_state(chat_id)}\n\n=====\nTime estimate\n"
+
             time_estimate = self.time_estimate.get(chat_id, None)
             if time_estimate is not None:
                 time_estimate = (
                     f"Start - {time_estimate[0].strftime("%Y-%m-%d %H:%M:%S")}, Estimate - {time_estimate[1]}"
                 )
-            self.send_message(f"Stored estimate: {time_estimate}", chat_id)
+            debug_string += f"Stored estimate: {time_estimate}\n====="
+
+            self.send_message(debug_string, chat_id)
 
         else:
             return False
