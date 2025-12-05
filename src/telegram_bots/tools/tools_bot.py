@@ -206,9 +206,12 @@ class ToolsBot(DatabaseBot):
         except ValueError:  # Passed value is not a number
             with self.db_cursor() as cursor:
                 cursor.execute(
-                    "SELECT * FROM occupancy WHERE time LIKE %?%", (text,)
+                    "SELECT * FROM occupancy WHERE time LIKE ?", (f"%{text}%",)
                 )  # Using fuzzy matching to allow for short names to be passed
                 counts = cursor.fetchall()
-            self.send_message(counts, chat_id, replay_markup=CUSTOM_KEYBOARD)
+            count_string = ""
+            for count in counts:
+                count_string += f"{count[0]:16} {count[1]}\n"
+            self.send_message(count_string, chat_id, replay_markup=CUSTOM_KEYBOARD)
 
         self.state_manager.clear_state(chat_id)
