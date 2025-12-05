@@ -13,6 +13,8 @@ any category but are useful on their own (to me at least).
     - This works with power meters with a red LED that blinks at 1Wh per impulse.
 - **Check estimate**: Takes an estimated time and checks it against the actual time taken to perform an operation.
     - Useful for checking time estimates for tasks such as software builds or cooking.
+- **Occupancy**: Manually record and retrieve occupancy of a location.
+    - Designed with a gym in mind, but can be used for any location where occupancy tracking is useful.
 
 ## Commands
 
@@ -23,3 +25,5 @@ The primary command for interacting with the bot is implemented through the cust
 - Check estimate: Start the process of checking an estimated time.
     - The bot will prompt for an estimated time in minutes. The estimate can be later checked against the actual time
       taken by sending "done" when the operation is complete.
+- Occupancy: Record or retrieve occupancy information.
+    - The bot will prompt for the current occupancy number or a day to retrieve occupancy for.
