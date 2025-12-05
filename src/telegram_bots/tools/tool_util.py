@@ -2,6 +2,12 @@ import cv2
 
 
 def get_power_draw(path: str) -> str:
+    """
+    Calculates the power draw from a video of a power meter
+
+    :param path:
+    :return:
+    """
     vidcap = cv2.VideoCapture(path)
 
     fps = round(vidcap.get(cv2.CAP_PROP_FPS), 1)

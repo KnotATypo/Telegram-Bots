@@ -7,33 +7,38 @@ from typing import Tuple
 import requests
 
 from telegram_bots import util
-from telegram_bots.bot import Bot
+from telegram_bots.bot import DatabaseBot
 from telegram_bots.tools.tool_util import get_power_draw
 
 
 class States(enum.Enum):
     POWER_METER = "power meter"
     CHECK_ESTIMATE = "check estimate"
+    OCCUPANCY = "occupancy"
 
     def __str__(self):
         return self.value
 
 
 CUSTOM_KEYBOARD = {
-    "keyboard": [[{"text": "Power meter"}, {"text": "Check estimate"}]],
+    "keyboard": [[{"text": "Power meter"}, {"text": "Check estimate"}, {"text": "Occupancy"}]],
     "resize_keyboard": True,
     "input_field_placeholder": "Choose an option",
     "is_persistent": True,
 }
 
 
-class ToolsBot(Bot):
+class ToolsBot(DatabaseBot):
     state_manager: util.StateManager = util.StateManager(States)
     time_estimate: dict[str, Tuple[datetime, int]] = {}
 
     def __init__(self):
         print("Initialising ToolsBot...")
         super().__init__(f"bot{os.getenv("TOOLS_BOT_TOKEN")}", os.getenv("TOOLS_BOT_SECRET"))
+
+        with self.db_cursor() as cursor:
+            cursor.execute("CREATE TABLE IF NOT EXISTS occupancy (time TEXT, count int)")
+
         print("ToolsBot initialised")
 
     def handle_message(self, data):
@@ -87,6 +92,8 @@ class ToolsBot(Bot):
 
         elif state == States.CHECK_ESTIMATE:
             self.store_estimate(chat_id, message["text"])
+        elif state == States.OCCUPANCY:
+            self.store_or_retrieve_occupancy(chat_id, message["text"])
 
     def handle_global_commands(self, chat_id, text: str) -> bool:
         """
@@ -179,3 +186,20 @@ class ToolsBot(Bot):
             self.state_manager.clear_state(chat_id)
         except ValueError:
             self.send_message("Please provide an estimate in minutes", chat_id)
+
+    def store_or_retrieve_occupancy(self, chat_id: str, text: str):
+        try:
+            number = int(text)
+            with self.db_cursor() as cursor:
+                time = datetime.now().strftime("%A %H:%M")
+                cursor.execute("INSERT INTO occupancy VALUES (?, ?)", (time, number))
+            self.send_message(f"Count of {number} stored for {time}", chat_id, replay_markup=CUSTOM_KEYBOARD)
+        except ValueError:  # Passed value is not a number
+            with self.db_cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM occupancy WHERE time ilike %?%", (time,)
+                )  # Using fuzzy matching to allow for short names to be passed
+                counts = cursor.fetchall()
+            self.send_message(counts, chat_id, replay_markup=CUSTOM_KEYBOARD)
+
+        self.state_manager.clear_state(chat_id)
