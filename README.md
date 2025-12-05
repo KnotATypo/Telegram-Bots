@@ -44,6 +44,7 @@ curl https://api.telegram.org/bot<TOKEN>/setWebhook?url=<WEBHOOK_URL>/webhook&se
 
 ```dotenv
 BOT_API_URL=
+DATABASE_PATH=
 
 EXPIRY_BOT_TOKEN=
 EXPIRY_BOT_SECRET=
@@ -56,6 +57,7 @@ TOOLS_BOT_SECRET=
 
 - `BOT_API_URL`: The base URL for the bot API. This will be https://api.telegram.org if you're using the cloud API,
   otherwise it will be your local instance such as http://localhost:8081.
+- `DATABASE_PATH`: The path to the SQLite database file used by bots that require persistent storage.
 - `*_BOT_TOKEN`: The API TOKEN for the given bot. This is obtained from BotFather through `/mybots` > Select your bot >
   API Token.
 - `*_BOT_SECRET`: The API secret for the given bot. This is set by you when you create the webhook for your bot (

@@ -1,7 +1,12 @@
 import json
 import os
+import sqlite3
+from contextlib import contextmanager
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Bot:
@@ -25,3 +30,19 @@ class Bot:
             headers={"Content-Type": "application/json"},
             data=json.dumps(data),
         )
+
+
+class DatabaseBot(Bot):
+    db_path: str
+
+    def __init__(self, api_token, secret_token):
+        super().__init__(api_token, secret_token)
+        self.db_path = os.getenv("DATABASE_PATH")
+
+    @contextmanager
+    def db_cursor(self):
+        connection = sqlite3.connect(self.db_path)
+        cursor = connection.cursor()
+        yield cursor
+        connection.commit()
+        connection.close()

@@ -1,14 +1,12 @@
 import atexit
 import os
-import sqlite3
 from collections import defaultdict
-from contextlib import contextmanager
 from datetime import datetime
 from typing import Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from telegram_bots.bot import Bot
+from telegram_bots.bot import DatabaseBot
 
 CUSTOM_KEYBOARD = {
     "keyboard": [[{"text": "Add"}, {"text": "List"}, {"text": "Remove"}]],
@@ -18,17 +16,15 @@ CUSTOM_KEYBOARD = {
 }
 
 
-class ExpiryBot(Bot):
+class ExpiryBot(DatabaseBot):
     user_state: Dict[str, Dict[str, str]]
     sched: BackgroundScheduler
-    db_path: str
 
     def __init__(self):
         print("Initialising ExpiryBot...")
         super().__init__(f"bot{os.getenv("EXPIRY_BOT_TOKEN")}", os.getenv("EXPIRY_BOT_SECRET"))
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
-        self.db_path = os.path.join(os.path.dirname(__file__), "data.db")
 
         with self.db_cursor() as cursor:
             cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
@@ -156,11 +152,3 @@ class ExpiryBot(Bot):
         self.send_message(f"{self.user_state[chat_id]['item']} will expire on {date}", chat_id, CUSTOM_KEYBOARD)
         self.user_state[chat_id]["state"] = "idle"
         self.user_state[chat_id]["item"] = None
-
-    @contextmanager
-    def db_cursor(self):
-        connection = sqlite3.connect(self.db_path)
-        cursor = connection.cursor()
-        yield cursor
-        connection.commit()
-        connection.close()
