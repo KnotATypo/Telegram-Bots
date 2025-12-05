@@ -26,7 +26,9 @@ def worker():
         try:
             bot.handle_message(data)
         except Exception as e:
-            print(f"{type(e)}: {e}")
+            error = f"{type(e)}: {e}"
+            print(error)
+            bot.send_message(error, data["message"]["chat"]["id"])
         finally:
             task_q.task_done()
 
