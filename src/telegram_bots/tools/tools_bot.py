@@ -211,7 +211,14 @@ class ToolsBot(DatabaseBot):
                 counts = cursor.fetchall()
             count_string = ""
             for count in counts:
-                count_string += f"{count[0]:16} {count[1]}\n"
+                hour = int(count[0].split(":")[0].split(" ")[1])
+                if hour > 12:
+                    hour -= 12
+                    period = "pm"
+                else:
+                    period = "am"
+                time = f"{count[0].split(" ")[0]} {hour}:{count[0].split(":")[1]}{period}"
+                count_string += f"{time:18} {count[1]}\n"
             self.send_message(count_string, chat_id, replay_markup=CUSTOM_KEYBOARD)
 
         self.state_manager.clear_state(chat_id)
