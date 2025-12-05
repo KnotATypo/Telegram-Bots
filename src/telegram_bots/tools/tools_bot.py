@@ -197,6 +197,22 @@ class ToolsBot(DatabaseBot):
             self.send_message("Please provide an estimate in minutes", chat_id)
 
     def store_or_retrieve_occupancy(self, chat_id: str, text: str):
+        def sort_time(entry):
+            day_multi = {
+                "Monday": 0,
+                "Tuesday": 1,
+                "Wednesday": 2,
+                "Thursday": 3,
+                "Friday": 4,
+                "Saturday": 5,
+                "Sunday": 6,
+            }
+            time = entry[0]
+            day = time.split(" ")[0]
+            hour = time.split(" ")[1].split(":")[0]
+            minute = time.split(" ")[1].split(":")[1]
+            return day_multi[day] * 24 + hour + float(f"0.{minute}")
+
         try:
             number = int(text)
             with self.db_cursor() as cursor:
@@ -209,6 +225,7 @@ class ToolsBot(DatabaseBot):
                     "SELECT * FROM occupancy WHERE time LIKE ?", (f"%{text}%",)
                 )  # Using fuzzy matching to allow for short names to be passed
                 counts = cursor.fetchall()
+            counts = sorted(counts, key=sort_time, reverse=True)
             count_string = ""
             for count in counts:
                 hour = int(count[0].split(":")[0].split(" ")[1])
