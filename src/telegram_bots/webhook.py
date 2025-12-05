@@ -49,9 +49,11 @@ def webhook():
         return jsonify({"status": "unauthorized"}), 401
 
     print("Webhook received for:", host)
-    task_q.put((bot, request.json))
-
-    return jsonify({"status": "success"}), 200
+    if "message" in request.json:
+        task_q.put((bot, request.json))
+        return jsonify({"status": "success"}), 200
+    else:
+        return jsonify({"status": "success"}), 204
 
 
 def start():
