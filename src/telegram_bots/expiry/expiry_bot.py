@@ -20,9 +20,9 @@ class ExpiryBot(DatabaseBot):
     user_state: Dict[str, Dict[str, str]]
     sched: BackgroundScheduler
 
-    def __init__(self):
+    def __init__(self, bot_token, bot_secret):
         print("Initialising ExpiryBot...")
-        super().__init__(f"bot{os.getenv("EXPIRY_BOT_TOKEN")}", os.getenv("EXPIRY_BOT_SECRET"))
+        super().__init__(f"bot{bot_token}", bot_secret)
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
 

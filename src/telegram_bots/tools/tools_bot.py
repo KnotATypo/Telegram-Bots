@@ -32,9 +32,9 @@ class ToolsBot(DatabaseBot):
     state_manager: util.StateManager = util.StateManager(States)
     time_estimate: dict[str, Tuple[datetime, int]] = {}
 
-    def __init__(self):
+    def __init__(self, bot_token, bot_secret):
         print("Initialising ToolsBot...")
-        super().__init__(f"bot{os.getenv("TOOLS_BOT_TOKEN")}", os.getenv("TOOLS_BOT_SECRET"))
+        super().__init__(f"bot{bot_token}", bot_secret)
 
         with self.db_cursor() as cursor:
             cursor.execute("CREATE TABLE IF NOT EXISTS occupancy (time TEXT, count int)")

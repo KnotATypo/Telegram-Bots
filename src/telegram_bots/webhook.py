@@ -1,6 +1,5 @@
 import os.path
 import queue
-import sys
 import threading
 from typing import Dict
 
@@ -57,13 +56,23 @@ def webhook():
 
 
 def start():
-    if not os.path.exists(".env"):
-        print(".env file does not exist. Exiting...", file=sys.stderr)
-        exit()
     print(".env file found")
     print("Initialising bots...")
-    bots["expiry-webhook"] = ExpiryBot()
-    bots["tools-webhook"] = ToolsBot()
+
+    expiry_bot_token = os.getenv("EXPIRY_BOT_TOKEN")
+    expiry_bot_secret = os.getenv("EXPIRY_BOT_SECRET")
+    if expiry_bot_token and expiry_bot_secret:
+        bots["expiry-webhook"] = ExpiryBot(expiry_bot_token, expiry_bot_secret)
+    else:
+        print("Expiry bot token or secret not provided, not launching bot.")
+
+    tools_bot_token = os.getenv("TOOLS_BOT_TOKEN")
+    tools_bot_secret = os.getenv("TOOLS_BOT_SECRET")
+    if tools_bot_token and tools_bot_secret:
+        bots["tools-webhook"] = ToolsBot(tools_bot_token, tools_bot_secret)
+    else:
+        print("Tools bot token or secret not provided, not launching bot.")
+
     print("Starting webhook server...")
     serve(app, host="0.0.0.0", port=5000)
 
