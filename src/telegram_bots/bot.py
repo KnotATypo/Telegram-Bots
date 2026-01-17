@@ -12,10 +12,12 @@ load_dotenv()
 class Bot:
     api_token: str
     secret_token: str
+    message_url: str
 
     def __init__(self, api_token, secret_token):
         self.api_token = api_token
         self.secret_token = secret_token
+        self.message_url = f"{os.getenv("BOT_API_URL")}/{self.api_token}/sendMessage"
 
     def handle_message(self, message):
         raise NotImplementedError()
@@ -26,7 +28,7 @@ class Bot:
             data["reply_markup"] = replay_markup
         print(f"Sending message to {chat_id}: {text}")
         requests.post(
-            f"{os.getenv("BOT_API_URL")}/{self.api_token}/sendMessage",
+            self.message_url,
             headers={"Content-Type": "application/json"},
             data=json.dumps(data),
         )

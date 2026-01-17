@@ -51,6 +51,10 @@ EXPIRY_BOT_SECRET=
 
 TOOLS_BOT_TOKEN=
 TOOLS_BOT_SECRET=
+
+# Only needed when using the provided Docker compose
+API_ID=
+API_HASH=
 ```
 
 #### Description
@@ -62,6 +66,8 @@ TOOLS_BOT_SECRET=
   API Token.
 - `*_BOT_SECRET`: The API secret for the given bot. This is set by you when you create the webhook for your bot (
   instructions above).
+- `API_*`: The ID and HASH for authenticating the self-hosted API. These are only needed when using the provided Docker
+  compose file.
 
 ## Running the App
 
