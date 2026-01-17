@@ -56,7 +56,6 @@ def webhook():
 
 
 def start():
-    print(".env file found")
     print("Initialising bots...")
 
     expiry_bot_token = os.getenv("EXPIRY_BOT_TOKEN")

@@ -55,6 +55,7 @@ TOOLS_BOT_SECRET=
 # Only needed when using the provided Docker compose
 API_ID=
 API_HASH=
+DB_MOUNT_LOCATION=
 ```
 
 #### Description
@@ -68,6 +69,7 @@ API_HASH=
   instructions above).
 - `API_*`: The ID and HASH for authenticating the self-hosted API. These are only needed when using the provided Docker
   compose file.
+- `DB_MOUNT_LOCATION`: Where the sqlite db should be mounted outside the container for persistence
 
 ## Running the App
 

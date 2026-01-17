@@ -3,6 +3,10 @@ services:
     image: knotatypo/telegram-bots:latest
     ports:
       - "5000:5000"
+    volumes:
+      - type: bind
+        source: ${DB_MOUNT_LOCATION}
+        target: /telegram-bots/bots.db
     environment:
       BOT_API_URL: http://localhost:8081
       DATABASE_PATH: /telegram-bots/bots.db
@@ -10,6 +14,7 @@ services:
       EXPIRY_BOT_SECRET: ${EXPIRY_BOT_SECRET}
       TOOLS_BOT_TOKEN: ${TOOLS_BOT_TOKEN}
       TOOLS_BOT_SECRET: ${TOOLS_BOT_SECRET}
+
   api:
     image: aiogram/telegram-bot-api:latest
     ports:
