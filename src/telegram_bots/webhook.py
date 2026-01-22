@@ -36,6 +36,14 @@ def worker():
 threading.Thread(target=worker, daemon=True).start()
 
 
+@app.route("/health_check/<bot>", methods=["GET"])
+def health_check(bot: str):
+    if bot in bots:
+        return jsonify({"status": "ok"}), 200
+    else:
+        return jsonify({"status": "not found"}), 404
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     host = request.headers["host"].split(".")[0]
