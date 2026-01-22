@@ -36,9 +36,11 @@ def worker():
 threading.Thread(target=worker, daemon=True).start()
 
 
-@app.route("/health_check/<bot>", methods=["GET"])
-def health_check(bot: str):
-    if bot in bots:
+@app.route("/health_check", methods=["GET"])
+def health_check():
+    # Webhooks are already specific to each bot
+    host = request.headers["host"].split(".")[0]
+    if host in bots:
         return jsonify({"status": "ok"}), 200
     else:
         return jsonify({"status": "not found"}), 404
