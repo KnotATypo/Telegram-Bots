@@ -18,6 +18,8 @@ app = Flask(__name__)
 bots: Dict[str, Bot] = {}
 task_q = queue.Queue()
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
 
 def worker():
     while True:
@@ -38,6 +40,10 @@ threading.Thread(target=worker, daemon=True).start()
 
 @app.route("/health_check", methods=["GET"])
 def health_check():
+    if LOG_LEVEL == "DEBUG":
+        print("Health check received")
+        print("Headers:", dict(request.headers))
+        print("JSON payload:", request.get_json(silent=True))
     # Webhooks are already specific to each bot
     host = request.headers["host"].split(".")[0]
     if host in bots:
@@ -58,6 +64,9 @@ def webhook():
         return jsonify({"status": "unauthorized"}), 401
 
     print("Webhook received for:", host)
+    if LOG_LEVEL == "DEBUG":
+        print("Headers:", dict(request.headers))
+        print("JSON payload:", request.get_json(silent=True))
     if "message" in request.json:
         task_q.put((bot, request.json))
         return jsonify({"status": "success"}), 200
