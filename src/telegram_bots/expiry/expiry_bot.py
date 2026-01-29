@@ -1,5 +1,4 @@
 import atexit
-import os
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict
@@ -7,7 +6,7 @@ from typing import Dict
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from telegram_bots.bot import DatabaseBot
-from telegram_bots.webhook import app
+from telegram_bots.logger import logger
 
 CUSTOM_KEYBOARD = {
     "keyboard": [[{"text": "Add"}, {"text": "List"}, {"text": "Remove"}]],
@@ -22,7 +21,7 @@ class ExpiryBot(DatabaseBot):
     sched: BackgroundScheduler
 
     def __init__(self, bot_token, bot_secret):
-        app.logger.debug("Initialising ExpiryBot...")
+        logger.debug("Initialising ExpiryBot...")
         super().__init__(f"bot{bot_token}", bot_secret)
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
@@ -35,7 +34,7 @@ class ExpiryBot(DatabaseBot):
         self.sched.start()
         atexit.register(lambda: self.sched.shutdown())
 
-        app.logger.info("ExpiryBot initialised")
+        logger.info("ExpiryBot initialised")
 
     def _send_notifications(self):
         with self.db_cursor() as cursor:

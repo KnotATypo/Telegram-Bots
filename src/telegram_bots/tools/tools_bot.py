@@ -9,7 +9,7 @@ import requests
 from telegram_bots import util
 from telegram_bots.bot import DatabaseBot
 from telegram_bots.tools.tool_util import get_power_draw
-from telegram_bots.webhook import app
+from telegram_bots.logger import logger
 
 
 class States(enum.Enum):
@@ -34,12 +34,12 @@ class ToolsBot(DatabaseBot):
     time_estimate: dict[str, Tuple[datetime, int]] = {}
 
     def __init__(self, bot_token, bot_secret):
-        app.logger.debug("Initialising ToolsBot...")
+        logger.debug("Initialising ToolsBot...")
         super().__init__(f"bot{bot_token}", bot_secret)
 
         with self.db_cursor() as cursor:
             cursor.execute("CREATE TABLE IF NOT EXISTS occupancy (time TEXT, count int)")
-        app.logger.info("ToolsBot initialised")
+        logger.info("ToolsBot initialised")
 
     def handle_message(self, data):
         """
