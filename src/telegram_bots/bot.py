@@ -6,6 +6,8 @@ from contextlib import contextmanager
 import requests
 from dotenv import load_dotenv
 
+from telegram_bots.webhook import app
+
 load_dotenv()
 
 
@@ -26,7 +28,7 @@ class Bot:
         data = {"text": text, "chat_id": chat_id}
         if replay_markup is not None:
             data["reply_markup"] = replay_markup
-        print(f"Sending message to {chat_id}: {text}")
+        app.logger.info(f"Sending message to {chat_id}: {text}")
         requests.post(
             self.message_url,
             headers={"Content-Type": "application/json"},

@@ -1,6 +1,7 @@
 import os.path
 import queue
 import threading
+import traceback
 from typing import Dict
 
 from dotenv import load_dotenv
@@ -27,10 +28,16 @@ def worker():
         try:
             bot.handle_message(data)
         except Exception as e:
-            error = f"{type(e)}: {e}"
-            print(error)
-            print(data)
-            bot.send_message(error, data["message"]["chat"]["id"])
+            error = f"{type(e).__name__}: {e}"
+            app.logger.error(error)
+            app.logger.error(traceback.format_exc())
+            try:
+                chat_id = data["message"]["chat"]["id"]
+                if chat_id is not None:
+                    bot.send_message(error, chat_id)
+            except Exception as e:
+                app.logger.error(f"Failed to send error message: {type(e).__name__}: {e}")
+                app.logger.error(traceback.format_exc())
         finally:
             task_q.task_done()
 
@@ -40,10 +47,9 @@ threading.Thread(target=worker, daemon=True).start()
 
 @app.route("/health_check", methods=["GET"])
 def health_check():
-    if LOG_LEVEL == "DEBUG":
-        print("Health check received")
-        print("Headers:", dict(request.headers))
-        print("JSON payload:", request.json)
+    app.logger.debug("Health check received")
+    app.logger.debug(f"Headers: {dict(request.headers)}")
+    app.logger.debug(f"JSON payload: {request.json}")
     # Webhooks are already specific to each bot
     host = request.headers["host"].split(".")[0]
     if host in bots:
@@ -54,10 +60,9 @@ def health_check():
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    if LOG_LEVEL == "DEBUG":
-        print("Webhook received")
-        print("Headers:", dict(request.headers))
-        print("JSON payload:", request.json)
+    app.logger.debug("Webhook received")
+    app.logger.debug(f"Headers: {dict(request.headers)}")
+    app.logger.debug(f"JSON payload: {request.json}")
 
     host = request.headers["host"].split(".")[0]
     bot = bots[host]
@@ -66,11 +71,12 @@ def webhook():
         "X-Telegram-Bot-Api-Secret-Token" not in request.headers
         or request.headers["X-Telegram-Bot-Api-Secret-Token"] != bot.secret_token
     ):
-        if LOG_LEVEL == "DEBUG":
-            print("Authentication failed")
+        app.logger.debug("Authentication failed")
         return jsonify({"status": "unauthorized"}), 401
 
-    print("Webhook received for:", host)
+    app.logger.info(
+        f"Webhook received for: {host}",
+    )
     if "message" in request.json:
         task_q.put((bot, request.json))
         return jsonify({"status": "success"}), 200
@@ -79,23 +85,23 @@ def webhook():
 
 
 def start():
-    print("Initialising bots...")
+    app.logger.debug("Initialising bots...")
 
     expiry_bot_token = os.getenv("EXPIRY_BOT_TOKEN")
     expiry_bot_secret = os.getenv("EXPIRY_BOT_SECRET")
     if expiry_bot_token and expiry_bot_secret:
         bots["expiry-webhook"] = ExpiryBot(expiry_bot_token, expiry_bot_secret)
     else:
-        print("Expiry bot token or secret not provided, not launching bot.")
+        app.logger.info("Expiry bot token or secret not provided, not launching bot.")
 
     tools_bot_token = os.getenv("TOOLS_BOT_TOKEN")
     tools_bot_secret = os.getenv("TOOLS_BOT_SECRET")
     if tools_bot_token and tools_bot_secret:
         bots["tools-webhook"] = ToolsBot(tools_bot_token, tools_bot_secret)
     else:
-        print("Tools bot token or secret not provided, not launching bot.")
+        app.logger.info("Tools bot token or secret not provided, not launching bot.")
 
-    print("Starting webhook server...")
+    app.logger.info("Starting webhook server...")
     serve(app, host="0.0.0.0", port=5000)
 
 

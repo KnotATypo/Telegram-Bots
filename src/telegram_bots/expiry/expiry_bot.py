@@ -7,6 +7,7 @@ from typing import Dict
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from telegram_bots.bot import DatabaseBot
+from telegram_bots.webhook import app
 
 CUSTOM_KEYBOARD = {
     "keyboard": [[{"text": "Add"}, {"text": "List"}, {"text": "Remove"}]],
@@ -21,7 +22,7 @@ class ExpiryBot(DatabaseBot):
     sched: BackgroundScheduler
 
     def __init__(self, bot_token, bot_secret):
-        print("Initialising ExpiryBot...")
+        app.logger.debug("Initialising ExpiryBot...")
         super().__init__(f"bot{bot_token}", bot_secret)
         self.user_state = defaultdict(lambda: {"state": "idle", "item": None})
         self.sched = BackgroundScheduler(daemon=True)
@@ -34,7 +35,7 @@ class ExpiryBot(DatabaseBot):
         self.sched.start()
         atexit.register(lambda: self.sched.shutdown())
 
-        print("ExpiryBot initialised")
+        app.logger.info("ExpiryBot initialised")
 
     def _send_notifications(self):
         with self.db_cursor() as cursor:
