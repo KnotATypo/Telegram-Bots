@@ -1,4 +1,4 @@
-FROM uv:debian-slim
+FROM ghcr.io/astral-sh/uv:debian-slim
 
 RUN apt update && apt install libsystemd-dev gcc pkg-config ffmpeg -y && apt clean && rm -rf /var/lib/apt/lists/*
 
