@@ -86,7 +86,7 @@ def webhook():
 
 
 def start():
-    configure_logging()
+    configure_logging(os.getenv("LOGGING_LEVEL", "INFO"))
     logger.debug("Initialising bots...")
 
     expiry_bot_token = os.getenv("EXPIRY_BOT_TOKEN")
