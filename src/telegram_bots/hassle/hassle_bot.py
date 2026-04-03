@@ -223,7 +223,7 @@ class HassleBot(DatabaseBot):
         if not rows:
             self.send_message("No tasks found.", chat_id, CUSTOM_KEYBOARD)
         else:
-            rows.sort(key=lambda x: datetime.strptime(x[1], "%Y-%m-%d %H:%M"))
+            rows.sort(key=lambda x: datetime.strptime(x[1], "%Y-%m-%d %H:%M:%S"))
             message = "Tasks:\n"
             for row in rows:
                 message += f'- "{row[0]}" will alert at {row[1]} and repeat {row[2]}\n'
