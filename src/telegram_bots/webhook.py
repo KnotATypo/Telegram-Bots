@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from waitress import serve
 
+from telegram_bots.hassle.hassle_bot import HassleBot
 from telegram_bots.logger import configure_logging
 from telegram_bots.logger import logger
 
@@ -102,6 +103,13 @@ def start():
         bots["tools-webhook"] = ToolsBot(tools_bot_token, tools_bot_secret)
     else:
         logger.info("Tools bot token or secret not provided, not launching bot.")
+
+    hassle_bot_token = os.getenv("HASSLE_BOT_TOKEN")
+    hassle_bot_secret = os.getenv("HASSLE_BOT_SECRET")
+    if hassle_bot_token and hassle_bot_secret:
+        bots["hassle-webhook"] = HassleBot(hassle_bot_token, hassle_bot_secret)
+    else:
+        logger.info("Hassle bot token or secret not provided, not launching bot.")
 
     logger.info("Starting webhook server...")
     serve(app, host="0.0.0.0", port=5000)
