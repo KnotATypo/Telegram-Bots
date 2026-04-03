@@ -27,6 +27,12 @@ CUSTOM_KEYBOARD = {
 
 
 def _parse_date(date_text: str) -> datetime | None:
+    """
+    Parses a date string in the format MM-DD HH:MM, infers the year, and returns the datetime object.
+
+    :param date_text: date string
+    :return: datetime object
+    """
     timestamp = date_text.split(" ")
     try:
         month = int(timestamp[0].split("-")[0])
@@ -76,6 +82,14 @@ class HassleBot(DatabaseBot):
         logger.info("HassleBot initialised")
 
     def _hassle(self, name: str, chat_id: str, next_delay: int) -> None:
+        """
+        Send notification message and schedule next message to be sent at decreasing interval
+
+        :param name:
+        :param chat_id:
+        :param next_delay:
+        :return:
+        """
         self.send_message(
             name,
             chat_id,
@@ -173,6 +187,12 @@ class HassleBot(DatabaseBot):
             del self.state_manager[chat_id]
 
     def _handle_ack(self, chat_id: str):
+        """
+        Handle the acknowledgement of the task
+
+        :param chat_id:
+        :return:
+        """
         for task_id in self.jobs:
             job, active = self.jobs[task_id]
             if not active:
