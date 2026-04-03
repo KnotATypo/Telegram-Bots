@@ -1,8 +1,9 @@
 import atexit
 import enum
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Tuple
 
+from apscheduler.job import Job
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from telegram_bots import util
@@ -45,6 +46,8 @@ def _parse_date(date_text: str) -> datetime | None:
 class HassleBot(DatabaseBot):
     state_manager: util.StateManager = util.StateManager(States)
     sched: BackgroundScheduler
+    # Contains the scheduled job for a task and a bool indicating if it is currently hassling
+    jobs: Dict[str, Tuple[Job, bool]]
     task_buffer: Dict[str, Tuple[str, datetime]]
 
     def __init__(self, bot_token: str, bot_secret: str):
@@ -52,6 +55,7 @@ class HassleBot(DatabaseBot):
         super().__init__(f"bot{bot_token}", bot_secret)
 
         self.task_buffer = {}
+        self.jobs = {}
 
         self.sched = BackgroundScheduler(daemon=True)
         self.sched.start()
@@ -63,7 +67,29 @@ class HassleBot(DatabaseBot):
             )
             cursor.execute("CREATE TABLE IF NOT EXISTS users_hassle (chat_id TEXT UNIQUE)")
 
+            cursor.execute("SELECT * FROM tasks_hassle")
+            tasks = cursor.fetchall()
+            for task in tasks:
+                job = self.sched.add_job(self._hassle, "date", run_date=task[1], args=[task[0], task[3], 15])
+                self.jobs[task[0] + "␟" + task[3]] = (job, False)
+
         logger.info("HassleBot initialised")
+
+    def _hassle(self, name: str, chat_id: str, next_delay: int) -> None:
+        self.send_message(
+            name,
+            chat_id,
+            {
+                "keyboard": [[{"text": "Acknowledge"}]],
+                "resize_keyboard": True,
+                "input_field_placeholder": "Acknowledge?",
+                "is_persistent": True,
+            },
+        )
+        next_run = datetime.now() + timedelta(minutes=next_delay)
+        next_delay = max(next_delay - 5, 5)
+        job = self.sched.add_job(self._hassle, "date", run_date=next_run, args=[name, chat_id, next_delay])
+        self.jobs[name + "␟" + chat_id] = (job, True)
 
     def handle_message(self, data):
         text: str = data["message"]["text"]
@@ -95,6 +121,8 @@ class HassleBot(DatabaseBot):
                     self.state_manager[chat_id] = States.REMOVE_TASK
             elif text == "List":
                 self._send_list(chat_id)
+            elif text == "Acknowledge":
+                self._handle_ack(chat_id)
         elif chat_state == States.ADD_TASK:
             self.state_manager[chat_id] = States.SET_DATE
             self.task_buffer[chat_id] = (text,)
@@ -139,7 +167,37 @@ class HassleBot(DatabaseBot):
                 else:
                     cursor.execute("DELETE FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, text))
                     self.send_message(f'Task "{text}" deleted', chat_id, CUSTOM_KEYBOARD)
+            self.jobs.pop(text + "␟" + chat_id)[0].remove()
             del self.state_manager[chat_id]
+
+    def _handle_ack(self, chat_id: str):
+        for task_id in self.jobs:
+            job, active = self.jobs[task_id]
+            if not active:
+                continue
+            job.remove()
+            task_name = task_id.split("␟")[0]
+            with self.db_cursor() as cursor:
+                cursor.execute("SELECT * FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, task_name))
+                task = cursor.fetchone()
+                if task[2] == "Never":
+                    cursor.execute("DELETE FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, task_name))
+                    new_time = None
+                else:
+                    if task[2] == "Weekly":
+                        new_time = task[1] + timedelta(weeks=1)
+                    elif task[2] == "Daily":
+                        new_time = task[1] + timedelta(days=1)
+                    cursor.execute(
+                        "UPDATE tasks_hassle SET alert_time=? WHERE chat_id=? AND name=?",
+                        (new_time, chat_id, task_name),
+                    )
+                    job = self.sched.add_job(self._hassle, "date", run_date=new_time, args=[task_name, chat_id, 15])
+                    self.jobs[task_id] = (job, False)
+            message = f'"{task_name}" acknowledged.'
+            if new_time is not None:
+                message += f" Next alert scheduled for {new_time}."
+            self.send_message(message, chat_id, CUSTOM_KEYBOARD)
 
     def _send_remove_options(self, chat_id) -> bool:
         with self.db_cursor() as cursor:
