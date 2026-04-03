@@ -52,6 +52,9 @@ EXPIRY_BOT_SECRET=
 TOOLS_BOT_TOKEN=
 TOOLS_BOT_SECRET=
 
+HASSLE_BOT_TOKEN=
+HASSLE_BOT_SECRET=
+
 # Only needed when using the provided Docker compose
 API_ID=
 API_HASH=
