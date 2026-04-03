@@ -38,7 +38,7 @@ class ToolsBot(DatabaseBot):
         super().__init__(f"bot{bot_token}", bot_secret)
 
         with self.db_cursor() as cursor:
-            cursor.execute("CREATE TABLE IF NOT EXISTS occupancy (time TEXT, count int)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS occupancy_tools (time TEXT, count int)")
         logger.info("ToolsBot initialised")
 
     def handle_message(self, data):
@@ -225,12 +225,12 @@ class ToolsBot(DatabaseBot):
             number = int(text)
             with self.db_cursor() as cursor:
                 time = datetime.now().strftime("%A %H:%M")
-                cursor.execute("INSERT INTO occupancy VALUES (?, ?)", (time, number))
+                cursor.execute("INSERT INTO occupancy_tools VALUES (?, ?)", (time, number))
             self.send_message(f"Count of {number} stored for {time}", chat_id, replay_markup=CUSTOM_KEYBOARD)
         except ValueError:  # Passed value is not a number
             with self.db_cursor() as cursor:
                 cursor.execute(
-                    "SELECT * FROM occupancy WHERE time LIKE ?", (f"%{text}%",)
+                    "SELECT * FROM occupancy_tools WHERE time LIKE ?", (f"%{text}%",)
                 )  # Using fuzzy matching to allow for short names to be passed
                 counts = cursor.fetchall()
             counts = sorted(counts, key=sort_time)

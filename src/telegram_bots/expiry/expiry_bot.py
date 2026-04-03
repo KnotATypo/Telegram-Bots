@@ -27,8 +27,8 @@ class ExpiryBot(DatabaseBot):
         self.sched = BackgroundScheduler(daemon=True)
 
         with self.db_cursor() as cursor:
-            cursor.execute("CREATE TABLE IF NOT EXISTS items (name TEXT, date TEXT)")
-            cursor.execute("CREATE TABLE IF NOT EXISTS users (chat_id TEXT UNIQUE)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS items_expiry (name TEXT, date TEXT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS users_expiry (chat_id TEXT UNIQUE)")
 
         self.sched.add_job(self._send_notifications, "cron", hour=10, minute=0)
         self.sched.start()
@@ -38,9 +38,9 @@ class ExpiryBot(DatabaseBot):
 
     def _send_notifications(self):
         with self.db_cursor() as cursor:
-            cursor.execute("SELECT name, date FROM items")
+            cursor.execute("SELECT name, date FROM items_expiry")
             rows = cursor.fetchall()
-            cursor.execute("SELECT chat_id FROM users")
+            cursor.execute("SELECT chat_id FROM users_exipry")
             users = [x[0] for x in cursor.fetchall()]
         today = datetime.now().date()
         for row in rows:
@@ -59,10 +59,10 @@ class ExpiryBot(DatabaseBot):
         chat_id = str(data["message"]["chat"]["id"])
 
         with self.db_cursor() as cursor:
-            cursor.execute("SELECT chat_id FROM users")
+            cursor.execute("SELECT chat_id FROM users_expiry")
             users = cursor.fetchall()
             if (chat_id,) not in users:
-                cursor.execute("INSERT INTO users (chat_id) VALUES (?)", (chat_id,))
+                cursor.execute("INSERT INTO users_expiry (chat_id) VALUES (?)", (chat_id,))
                 self.send_message(
                     "Welcome to ExpiryBot! Use the keyboard below to manage your items.\n\n"
                     "You will now receive notifications when items are about to expire. If this is a mistake, please contact the bot admin.",
@@ -92,13 +92,13 @@ class ExpiryBot(DatabaseBot):
         elif state == "removing_item":  # Remove selected item
             item_to_remove = text
             with self.db_cursor() as cursor:
-                cursor.execute("DELETE FROM items WHERE name = ?", (item_to_remove,))
+                cursor.execute("DELETE FROM items_expiry WHERE name = ?", (item_to_remove,))
             self.send_message(f"{item_to_remove} has been removed.", chat_id, CUSTOM_KEYBOARD)
             self.user_state[chat_id]["state"] = "idle"
 
     def _send_list(self, chat_id):
         with self.db_cursor() as cursor:
-            cursor.execute("SELECT name, date FROM items")
+            cursor.execute("SELECT name, date FROM items_expiry")
             rows = cursor.fetchall()
         if not rows:
             self.send_message("No items found.", chat_id, CUSTOM_KEYBOARD)
@@ -112,7 +112,7 @@ class ExpiryBot(DatabaseBot):
     def _send_remove_options(self, chat_id):
         self.user_state[chat_id]["state"] = "removing_item"
         with self.db_cursor() as cursor:
-            cursor.execute("SELECT name FROM items")
+            cursor.execute("SELECT name FROM items_expiry")
             rows = cursor.fetchall()
         if not rows:
             self.send_message("No items to remove.", chat_id, CUSTOM_KEYBOARD)
@@ -148,7 +148,9 @@ class ExpiryBot(DatabaseBot):
             year += 1
         date = f"{year}-{month:02d}-{day:02d}"
         with self.db_cursor() as cursor:
-            cursor.execute("INSERT INTO items (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date))
+            cursor.execute(
+                "INSERT INTO items_expiry (name, date) VALUES (?, ?)", (self.user_state[chat_id]["item"], date)
+            )
         self.send_message(f"{self.user_state[chat_id]['item']} will expire on {date}", chat_id, CUSTOM_KEYBOARD)
         self.user_state[chat_id]["state"] = "idle"
         self.user_state[chat_id]["item"] = None
