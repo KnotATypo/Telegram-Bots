@@ -2,6 +2,8 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
+from sqlite3 import Cursor
+from typing import Generator
 
 import requests
 from dotenv import load_dotenv
@@ -44,7 +46,7 @@ class DatabaseBot(Bot):
         self.db_path = os.getenv("DATABASE_PATH")
 
     @contextmanager
-    def db_cursor(self):
+    def db_cursor(self) -> Generator[Cursor]:
         connection = sqlite3.connect(self.db_path)
         cursor = connection.cursor()
         yield cursor

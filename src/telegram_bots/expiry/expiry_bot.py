@@ -5,6 +5,7 @@ from typing import Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from telegram_bots import util
 from telegram_bots.bot import DatabaseBot
 from telegram_bots.logger import logger
 
@@ -139,13 +140,7 @@ class ExpiryBot(DatabaseBot):
         except:
             self.send_message("Invalid date format. Please provide the expiration date in DD/MM format:", chat_id)
             return
-        year = datetime.now().year
-        if (
-            month < datetime.now().month
-            or (month == datetime.now().month and day < datetime.now().day)
-            or (month == datetime.now().month and day == datetime.now().day)
-        ):
-            year += 1
+        year = util.get_future_year(day, month)
         date = f"{year}-{month:02d}-{day:02d}"
         with self.db_cursor() as cursor:
             cursor.execute(
