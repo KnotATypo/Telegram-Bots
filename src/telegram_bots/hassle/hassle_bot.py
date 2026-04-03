@@ -158,6 +158,8 @@ class HassleBot(DatabaseBot):
                 chat_id,
                 CUSTOM_KEYBOARD,
             )
+            job = self.sched.add_job(self._hassle, "date", run_date=date, args=[name, chat_id, 15])
+            self.jobs[name + "␟" + chat_id] = (job, False)
             del self.state_manager[chat_id]
         elif chat_state == States.REMOVE_TASK:
             with self.db_cursor() as cursor:
