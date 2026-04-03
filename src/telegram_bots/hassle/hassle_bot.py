@@ -126,7 +126,9 @@ class HassleBot(DatabaseBot):
                     (name, date, text, chat_id),
                 )
             self.send_message(
-                f'Created task "{name}". This task will alert at {date} and repeat {text.lower()}', chat_id
+                f'Created task "{name}". This task will alert at {date} and repeat {text.lower()}',
+                chat_id,
+                CUSTOM_KEYBOARD,
             )
             del self.state_manager[chat_id]
         elif chat_state == States.REMOVE_TASK:
@@ -135,7 +137,7 @@ class HassleBot(DatabaseBot):
                 if len(cursor.fetchall()) == 0:
                     self.send_message("Item not found.", chat_id, CUSTOM_KEYBOARD)
                 else:
-                    cursor.execute("DELETE * FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, text))
+                    cursor.execute("DELETE FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, text))
                     self.send_message(f'Task "{text}" deleted', chat_id, CUSTOM_KEYBOARD)
             del self.state_manager[chat_id]
 
