@@ -198,6 +198,7 @@ class HassleBot(DatabaseBot):
             if not active:
                 continue
             job.remove()
+            del self.jobs[task_id]
             task_name = task_id.split("␟")[0]
             with self.db_cursor() as cursor:
                 cursor.execute("SELECT * FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, task_name))
@@ -206,10 +207,11 @@ class HassleBot(DatabaseBot):
                     cursor.execute("DELETE FROM tasks_hassle WHERE chat_id = ? AND name = ?", (chat_id, task_name))
                     new_time = None
                 else:
+                    old_time = datetime.strptime(task[1], "%Y-%m-%d %H:%M:%S")
                     if task[2] == "Weekly":
-                        new_time = task[1] + timedelta(weeks=1)
+                        new_time = old_time + timedelta(weeks=1)
                     elif task[2] == "Daily":
-                        new_time = task[1] + timedelta(days=1)
+                        new_time = old_time + timedelta(days=1)
                     cursor.execute(
                         "UPDATE tasks_hassle SET alert_time=? WHERE chat_id=? AND name=?",
                         (new_time, chat_id, task_name),
