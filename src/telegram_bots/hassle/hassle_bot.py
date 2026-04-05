@@ -36,17 +36,17 @@ def _parse_date(date_text: str) -> datetime | None:
     timestamp = date_text.split(" ")
     try:
         month = int(timestamp[0].split("-")[0])
-        assert 1 <= month <= 12
         day = int(timestamp[0].split("-")[1])
-        assert 1 <= day <= 31
         hour = int(timestamp[1].split(":")[0])
-        assert 0 <= hour <= 23
         minute = int(timestamp[1].split(":")[1])
-        assert 0 <= minute <= 59
+
+        now = datetime.now()
+        parsed_time = datetime(now.year, month, day, hour, minute)
+        assert now < parsed_time
     except (ValueError, AssertionError):
         return None
-    year = util.get_future_year(day, month)
-    return datetime(year, month, day, hour, minute)
+
+    return parsed_time
 
 
 class HassleBot(DatabaseBot):
@@ -143,7 +143,7 @@ class HassleBot(DatabaseBot):
             self.send_message("Please provide a time for the alert in the format MM-DD HH:MM.", chat_id)
         elif chat_state == States.SET_DATE:
             if (date := _parse_date(text)) is None:
-                self.send_message("Invalid date. Please provide in MM-DD HH:MM format.", chat_id)
+                self.send_message("Invalid date or date in past. Please provide in MM-DD HH:MM format.", chat_id)
                 return
             self.task_buffer[chat_id] = (self.task_buffer[chat_id][0], date)
             self.send_message(
