@@ -193,8 +193,7 @@ class HassleBot(DatabaseBot):
         :param chat_id:
         :return:
         """
-        for task_id in self.jobs:
-            job, active = self.jobs[task_id]
+        for task_id, (job, active) in [(key, val) for (key, val) in self.jobs.items()]:
             if not active:
                 continue
             job.remove()
