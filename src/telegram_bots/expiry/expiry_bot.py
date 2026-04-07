@@ -41,7 +41,7 @@ class ExpiryBot(DatabaseBot):
         with self.db_cursor() as cursor:
             cursor.execute("SELECT name, date FROM items_expiry")
             rows = cursor.fetchall()
-            cursor.execute("SELECT chat_id FROM users_exipry")
+            cursor.execute("SELECT chat_id FROM users_expiry")
             users = [x[0] for x in cursor.fetchall()]
         today = datetime.now().date()
         for row in rows:
