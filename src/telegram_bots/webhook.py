@@ -104,12 +104,12 @@ def start():
     else:
         logger.info("Tools bot token or secret not provided, not launching bot.")
 
-    hassle_bot_token = os.getenv("HASSLE_BOT_TOKEN")
-    hassle_bot_secret = os.getenv("HASSLE_BOT_SECRET")
-    if hassle_bot_token and hassle_bot_secret:
-        bots["hassle-webhook"] = HassleBot(hassle_bot_token, hassle_bot_secret)
-    else:
-        logger.info("Hassle bot token or secret not provided, not launching bot.")
+    # hassle_bot_token = os.getenv("HASSLE_BOT_TOKEN")
+    # hassle_bot_secret = os.getenv("HASSLE_BOT_SECRET")
+    # if hassle_bot_token and hassle_bot_secret:
+    #     bots["hassle-webhook"] = HassleBot(hassle_bot_token, hassle_bot_secret)
+    # else:
+    #     logger.info("Hassle bot token or secret not provided, not launching bot.")
 
     logger.info("Starting webhook server...")
     serve(app, host="0.0.0.0", port=5000)
